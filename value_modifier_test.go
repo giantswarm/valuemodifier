@@ -11,7 +11,7 @@ func (m testModifier) Modify(value []byte) ([]byte, error) {
 	return []byte(string(value) + "-modified"), nil
 }
 
-func Test_ValueModifier_traverseJSON(t *testing.T) {
+func Test_ValueModifier_TraverseJSON(t *testing.T) {
 	testJSON := `{
   "block1": {
     "block11": {
@@ -26,14 +26,14 @@ func Test_ValueModifier_traverseJSON(t *testing.T) {
     "pass4": "pass4"
   },
   "pass5": "pass5",
-  "pass6": "pass6"
+  "pass6": 123456
 }`
 
 	valueModifiers := []ValueModifier{
 		testModifier{},
 	}
 
-	output, err := traverseJSON([]byte(testJSON), valueModifiers...)
+	output, err := TraverseJSON([]byte(testJSON), valueModifiers...)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}
@@ -60,7 +60,7 @@ func Test_ValueModifier_traverseJSON(t *testing.T) {
 	}
 }
 
-func Test_ValueModifier_traverseYAML(t *testing.T) {
+func Test_ValueModifier_TraverseYAML(t *testing.T) {
 	testYAML := `block1:
   block11:
     pass1: pass1
@@ -70,14 +70,14 @@ block2:
     pass3: pass3
   pass4: pass4
 pass5: pass5
-pass6: pass6
+pass6: 1234565
 `
 
 	valueModifiers := []ValueModifier{
 		testModifier{},
 	}
 
-	output, err := traverseYAML([]byte(testYAML), valueModifiers...)
+	output, err := TraverseYAML([]byte(testYAML), valueModifiers...)
 	if err != nil {
 		t.Fatal("expected", nil, "got", err)
 	}

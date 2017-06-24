@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 
 	microerror "github.com/giantswarm/microkit/error"
+	"github.com/spf13/cast"
 	yaml "gopkg.in/yaml.v1"
 )
 
-func traverseJSON(input []byte, valueModifiers ...ValueModifier) ([]byte, error) {
+func TraverseJSON(input []byte, valueModifiers ...ValueModifier) ([]byte, error) {
 	var m map[string]interface{}
 	err := json.Unmarshal(input, &m)
 	if err != nil {
@@ -25,7 +26,7 @@ func traverseJSON(input []byte, valueModifiers ...ValueModifier) ([]byte, error)
 	return b, nil
 }
 
-func traverseYAML(input []byte, valueModifiers ...ValueModifier) ([]byte, error) {
+func TraverseYAML(input []byte, valueModifiers ...ValueModifier) ([]byte, error) {
 	var m map[interface{}]interface{}
 	err := yaml.Unmarshal(input, &m)
 	if err != nil {
