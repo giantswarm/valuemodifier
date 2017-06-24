@@ -53,8 +53,8 @@ func toModifiedValueJSON(val interface{}, valueModifiers ...ValueModifier) inter
 		return m
 	}
 
-	s, ok := val.(string)
-	if ok {
+	s := cast.ToString(val)
+	if s != "" {
 		for _, m := range valueModifiers {
 			o, err := m.Modify([]byte(s))
 			if err != nil {
@@ -77,8 +77,8 @@ func toModifiedValueYAML(val interface{}, valueModifiers ...ValueModifier) inter
 		return m
 	}
 
-	s, ok := val.(string)
-	if ok {
+	s := cast.ToString(val)
+	if s != "" {
 		for _, m := range valueModifiers {
 			o, err := m.Modify([]byte(s))
 			if err != nil {

@@ -52,7 +52,7 @@ func Test_ValueModifier_traverseJSON(t *testing.T) {
     "pass4": "pass4-modified"
   },
   "pass5": "pass5-modified",
-  "pass6": "pass6-modified"
+  "pass6": "123456-modified"
 }`
 
 	if string(output) != expectedJSON {
@@ -91,7 +91,7 @@ block2:
     pass3: pass3-modified
   pass4: pass4-modified
 pass5: pass5-modified
-pass6: pass6-modified
+pass6: 1234565-modified
 `
 
 	if string(output) != expectedYAML {
