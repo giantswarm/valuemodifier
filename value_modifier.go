@@ -94,13 +94,22 @@ func (s *Service) TraverseYAML(input []byte) ([]byte, error) {
 }
 
 func toModifiedValueJSON(key string, val interface{}, ignoreFields []string, valueModifiers ...ValueModifier) interface{} {
-	m, ok := val.(map[string]interface{})
+	m1, ok := val.(map[string]interface{})
 	if ok {
-		for k, v := range m {
-			m[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
+		for k, v := range m1 {
+			m1[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
 		}
 
-		return m
+		return m1
+	}
+
+	m2, ok := val.([]interface{})
+	if ok {
+		for i, v := range m2 {
+			m2[i] = toModifiedValueJSON("", v, ignoreFields, valueModifiers...)
+		}
+
+		return m2
 	}
 
 	s := cast.ToString(val)
@@ -123,13 +132,22 @@ func toModifiedValueJSON(key string, val interface{}, ignoreFields []string, val
 }
 
 func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string, valueModifiers ...ValueModifier) interface{} {
-	m, ok := val.(map[interface{}]interface{})
+	m1, ok := val.(map[interface{}]interface{})
 	if ok {
-		for k, v := range m {
-			m[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
+		for k, v := range m1 {
+			m1[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
 		}
 
-		return m
+		return m1
+	}
+
+	m2, ok := val.([]interface{})
+	if ok {
+		for i, v := range m2 {
+			m2[i] = toModifiedValueYAML("", v, ignoreFields, valueModifiers...)
+		}
+
+		return m2
 	}
 
 	s := cast.ToString(val)
