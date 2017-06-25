@@ -47,7 +47,7 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 			IgnoreFields: []string{},
 			Input: `{
   "noSecret1": "noSecret1",
-  "pass1": "12345"
+  "pass1": 12345
 }`,
 			Expected: `{
   "noSecret1": "noSecret1-modified1",
@@ -85,11 +85,11 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 				"noSecret1",
 			},
 			Input: `{
-  "noSecret1": "noSecret1",
+  "noSecret1": "foo",
   "pass1": "pass1"
 }`,
 			Expected: `{
-  "noSecret1": "noSecret1",
+  "noSecret1": "foo",
   "pass1": "pass1-modified1"
 }`,
 		},
@@ -105,14 +105,14 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 				"noSecret2",
 			},
 			Input: `{
-  "noSecret1": "noSecret1",
-  "noSecret2": "noSecret2",
+  "noSecret1": "foo",
+  "noSecret2": "bar",
   "pass1": "pass1",
   "pass2": "pass2"
 }`,
 			Expected: `{
-  "noSecret1": "noSecret1",
-  "noSecret2": "noSecret2",
+  "noSecret1": "foo",
+  "noSecret2": "bar",
   "pass1": "pass1-modified1-modified2",
   "pass2": "pass2-modified1-modified2"
 }`,
