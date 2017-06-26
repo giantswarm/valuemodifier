@@ -308,6 +308,22 @@ pass5: pass5-modified1-modified2
 pass6: 123456-modified1-modified2
 `,
 		},
+		// Test case 7, modifiers modify string blocks.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			Input: `pass1: |
+  foo
+  bar
+`,
+			Expected: `pass1: |-
+  foo
+  bar
+  -modified1
+`,
+		},
 	}
 
 	for i, testCase := range testCases {
