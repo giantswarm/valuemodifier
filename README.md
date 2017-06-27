@@ -2,7 +2,7 @@
 
 # valuemodifier
 Package valuemodifier provides an interface to modify values of arbitrary
-structures in custom ways.
+structures in custom ways. Currently JSON and YAML formats are supported.
 
 ### usage
 This is an working example of how to use this package. For more examples check
