@@ -48,7 +48,7 @@ func New(config Config) (*Service, error) {
 	return newService, nil
 }
 
-// Service implements the GPG decryption value modifier.
+// Service implements the traversing value modifier.
 type Service struct {
 	// Dependencies.
 	valueModifiers []ValueModifier
