@@ -152,17 +152,47 @@ func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string
 
 	s := cast.ToString(val)
 	if s != "" {
-		for _, f := range ignoreFields {
-			if f == key {
-				return s
+		var m3 map[interface{}]interface{}
+		err := yaml.Unmarshal([]byte(s), &m3)
+		if err != nil || m3 == nil {
+			for _, f := range ignoreFields {
+				if f == key {
+					return s
+				}
 			}
-		}
-		for _, m := range valueModifiers {
-			o, err := m.Modify([]byte(s))
-			if err != nil {
-				panic(err)
+			for _, m := range valueModifiers {
+				o, err := m.Modify([]byte(s))
+				if err != nil {
+					panic(err)
+				}
+				s = string(o)
 			}
-			s = string(o)
+		} else {
+			var m4 map[string]interface{}
+			err := json.Unmarshal([]byte(s), &m4)
+			if err != nil || m4 == nil {
+				for k, v := range m3 {
+					m3[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
+				}
+
+				b, err := yaml.Marshal(m3)
+				if err != nil {
+					panic(err)
+				}
+
+				return string(b)
+			} else {
+				for k, v := range m4 {
+					m4[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
+				}
+
+				b, err := json.MarshalIndent(m4, "", "  ")
+				if err != nil {
+					panic(err)
+				}
+
+				return string(b)
+			}
 		}
 	}
 

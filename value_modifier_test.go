@@ -324,9 +324,54 @@ pass6: 123456-modified1-modified2
   -modified1
 `,
 		},
+		// Test case 8, modifiers modify secrets of string blocks representing YAML.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			Input: `pass1: |
+  bar:
+    baz: pass2
+  foo: pass3
+`,
+			Expected: `pass1: |
+  bar:
+    baz: pass2-modified1
+  foo: pass3-modified1
+`,
+		},
+		// Test case 9, modifiers modify secrets of string blocks representing JSON.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			Input: `pass1: |
+  {
+    "block1": {
+      "block11": {
+        "pass2": "pass2"
+      }
+    }
+  }
+`,
+			Expected: `pass1: |-
+  {
+    "block1": {
+      "block11": {
+        "pass2": "pass2-modified1"
+      }
+    }
+  }
+`,
+		},
 	}
 
 	for i, testCase := range testCases {
+		if i != 8 {
+			continue
+		}
 		config := DefaultConfig()
 		config.ValueModifiers = testCase.ValueModifiers
 		config.IgnoreFields = testCase.IgnoreFields
