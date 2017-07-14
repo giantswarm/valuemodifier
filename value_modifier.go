@@ -168,16 +168,31 @@ func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string
 				s = string(o)
 			}
 		} else {
-			for k, v := range m3 {
-				m3[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
-			}
+			var m4 map[string]interface{}
+			err := json.Unmarshal([]byte(s), &m4)
+			if err != nil || m4 == nil {
+				for k, v := range m3 {
+					m3[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
+				}
 
-			b, err := yaml.Marshal(m3)
-			if err != nil {
-				panic(err)
-			}
+				b, err := yaml.Marshal(m3)
+				if err != nil {
+					panic(err)
+				}
 
-			return string(b)
+				return string(b)
+			} else {
+				for k, v := range m4 {
+					m4[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
+				}
+
+				b, err := json.MarshalIndent(m4, "", "  ")
+				if err != nil {
+					panic(err)
+				}
+
+				return string(b)
+			}
 		}
 	}
 
