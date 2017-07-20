@@ -2,6 +2,7 @@ package valuemodifier
 
 import (
 	"encoding/json"
+	"strings"
 
 	microerror "github.com/giantswarm/microkit/error"
 	"github.com/spf13/cast"
@@ -16,6 +17,7 @@ type Config struct {
 
 	// Settings.
 	IgnoreFields []string
+	SelectFields []string
 }
 
 // DefaultConfig provides a default configuration to create a new GPG decryption
@@ -27,6 +29,7 @@ func DefaultConfig() Config {
 
 		// Settings.
 		IgnoreFields: nil,
+		SelectFields: nil,
 	}
 }
 
@@ -37,12 +40,18 @@ func New(config Config) (*Service, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.ValueModifiers must not be empty")
 	}
 
+	// Settings.
+	if len(config.IgnoreFields) != 0 && len(config.SelectFields) != 0 {
+		return nil, microerror.MaskAnyf(invalidConfigError, "config.IgnoreFields must be empty when config.SelectFields provided")
+	}
+
 	newService := &Service{
 		// Dependencies.
 		valueModifiers: config.ValueModifiers,
 
 		// Settings.
 		ignoreFields: config.IgnoreFields,
+		selectFields: config.SelectFields,
 	}
 
 	return newService, nil
@@ -55,6 +64,7 @@ type Service struct {
 
 	// Settings.
 	ignoreFields []string
+	selectFields []string
 }
 
 func (s *Service) TraverseJSON(input []byte) ([]byte, error) {
@@ -64,8 +74,9 @@ func (s *Service) TraverseJSON(input []byte) ([]byte, error) {
 		return nil, microerror.MaskAny(err)
 	}
 
+	var p []string
 	for k, v := range m {
-		m[k] = toModifiedValueJSON(k, v, s.ignoreFields, s.valueModifiers...)
+		m[k] = s.toModifiedValueJSON(k, v, p)
 	}
 	b, err := json.MarshalIndent(m, "", "  ")
 	if err != nil {
@@ -82,8 +93,9 @@ func (s *Service) TraverseYAML(input []byte) ([]byte, error) {
 		return nil, microerror.MaskAny(err)
 	}
 
+	var p []string
 	for k, v := range m {
-		m[k] = toModifiedValueYAML(k, v, s.ignoreFields, s.valueModifiers...)
+		m[k] = s.toModifiedValueYAML(k, v, p)
 	}
 	b, err := yaml.Marshal(m)
 	if err != nil {
@@ -93,11 +105,14 @@ func (s *Service) TraverseYAML(input []byte) ([]byte, error) {
 	return b, nil
 }
 
-func toModifiedValueJSON(key string, val interface{}, ignoreFields []string, valueModifiers ...ValueModifier) interface{} {
+func (s *Service) toModifiedValueJSON(key string, val interface{}, path []string) interface{} {
+	var p []string
+	p = append(p, path...)
+
 	m1, ok := val.(map[string]interface{})
 	if ok {
 		for k, v := range m1 {
-			m1[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
+			m1[k] = s.toModifiedValueJSON(k, v, p)
 		}
 
 		return m1
@@ -106,36 +121,39 @@ func toModifiedValueJSON(key string, val interface{}, ignoreFields []string, val
 	m2, ok := val.([]interface{})
 	if ok {
 		for i, v := range m2 {
-			m2[i] = toModifiedValueJSON("", v, ignoreFields, valueModifiers...)
+			m2[i] = s.toModifiedValueJSON("", v, p)
 		}
 
 		return m2
 	}
 
-	s := cast.ToString(val)
-	if s != "" {
-		for _, f := range ignoreFields {
+	str := cast.ToString(val)
+	if str != "" {
+		for _, f := range s.ignoreFields {
 			if f == key {
-				return s
+				return str
 			}
 		}
-		for _, m := range valueModifiers {
-			o, err := m.Modify([]byte(s))
+		for _, m := range s.valueModifiers {
+			o, err := m.Modify([]byte(str))
 			if err != nil {
 				panic(err)
 			}
-			s = string(o)
+			str = string(o)
 		}
 	}
 
-	return s
+	return str
 }
 
-func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string, valueModifiers ...ValueModifier) interface{} {
+func (s *Service) toModifiedValueYAML(key interface{}, val interface{}, path []string) interface{} {
+	var p []string
+	p = append(p, path...)
+
 	m1, ok := val.(map[interface{}]interface{})
 	if ok {
 		for k, v := range m1 {
-			m1[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
+			m1[k] = s.toModifiedValueYAML(k, v, p)
 		}
 
 		return m1
@@ -144,35 +162,52 @@ func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string
 	m2, ok := val.([]interface{})
 	if ok {
 		for i, v := range m2 {
-			m2[i] = toModifiedValueYAML("", v, ignoreFields, valueModifiers...)
+			m2[i] = s.toModifiedValueYAML("", v, p)
 		}
 
 		return m2
 	}
 
-	s := cast.ToString(val)
-	if s != "" {
+	str := cast.ToString(val)
+	if str != "" {
 		var m3 map[interface{}]interface{}
-		err := yaml.Unmarshal([]byte(s), &m3)
+		err := yaml.Unmarshal([]byte(str), &m3)
 		if err != nil || m3 == nil {
-			for _, f := range ignoreFields {
-				if f == key {
-					return s
+			if len(s.selectFields) == 0 {
+				for _, f := range s.ignoreFields {
+					if f == key {
+						return str
+					}
+				}
+			} else {
+				for _, f := range s.selectFields {
+					if f == strings.Join(append(p, key.(string)), ".") {
+						for _, m := range s.valueModifiers {
+							o, err := m.Modify([]byte(str))
+							if err != nil {
+								panic(err)
+							}
+							str = string(o)
+						}
+					}
 				}
 			}
-			for _, m := range valueModifiers {
-				o, err := m.Modify([]byte(s))
-				if err != nil {
-					panic(err)
+
+			if len(s.selectFields) == 0 && len(s.selectFields) == 0 {
+				for _, m := range s.valueModifiers {
+					o, err := m.Modify([]byte(str))
+					if err != nil {
+						panic(err)
+					}
+					str = string(o)
 				}
-				s = string(o)
 			}
 		} else {
 			var m4 map[string]interface{}
-			err := json.Unmarshal([]byte(s), &m4)
+			err := json.Unmarshal([]byte(str), &m4)
 			if err != nil || m4 == nil {
 				for k, v := range m3 {
-					m3[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
+					m3[k] = s.toModifiedValueYAML(k, v, p)
 				}
 
 				b, err := yaml.Marshal(m3)
@@ -183,7 +218,7 @@ func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string
 				return string(b)
 			} else {
 				for k, v := range m4 {
-					m4[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
+					m4[k] = s.toModifiedValueJSON(k, v, p)
 				}
 
 				b, err := json.MarshalIndent(m4, "", "  ")
@@ -196,5 +231,5 @@ func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string
 		}
 	}
 
-	return s
+	return str
 }

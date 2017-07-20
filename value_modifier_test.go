@@ -190,6 +190,7 @@ func Test_ValueModifier_TraverseYAML(t *testing.T) {
 	testCases := []struct {
 		ValueModifiers []ValueModifier
 		IgnoreFields   []string
+		SelectFields   []string
 		Input          string
 		Expected       string
 	}{
@@ -199,6 +200,7 @@ func Test_ValueModifier_TraverseYAML(t *testing.T) {
 				testModifier1{},
 			},
 			IgnoreFields: []string{},
+			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
 pass1: pass1
 `,
@@ -212,6 +214,7 @@ pass1: pass1-modified1
 				testModifier1{},
 			},
 			IgnoreFields: []string{},
+			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
 pass1: 12345
 `,
@@ -225,6 +228,7 @@ pass1: 12345-modified1
 				testModifier1{},
 			},
 			IgnoreFields: []string{},
+			SelectFields: []string{},
 			Input: `list1:
 - pass1: pass1
 `,
@@ -241,6 +245,7 @@ pass1: 12345-modified1
 			IgnoreFields: []string{
 				"noSecret1",
 			},
+			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
 pass1: pass1
 `,
@@ -259,6 +264,7 @@ pass1: pass1-modified1
 				"noSecret1",
 				"noSecret2",
 			},
+			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
 noSecret2: noSecret2
 pass1: pass1
@@ -281,6 +287,7 @@ pass2: pass2-modified1-modified2
 				"noSecret1",
 				"noSecret2",
 			},
+			SelectFields: []string{},
 			Input: `block1:
   block11:
     pass1: pass1
@@ -314,6 +321,7 @@ pass6: 123456-modified1-modified2
 				testModifier1{},
 			},
 			IgnoreFields: []string{},
+			SelectFields: []string{},
 			Input: `pass1: |
   foo
   bar
@@ -330,6 +338,7 @@ pass6: 123456-modified1-modified2
 				testModifier1{},
 			},
 			IgnoreFields: []string{},
+			SelectFields: []string{},
 			Input: `pass1: |
   bar:
     baz: pass2
@@ -347,6 +356,7 @@ pass6: 123456-modified1-modified2
 				testModifier1{},
 			},
 			IgnoreFields: []string{},
+			SelectFields: []string{},
 			Input: `pass1: |
   {
     "block1": {
@@ -366,15 +376,42 @@ pass6: 123456-modified1-modified2
   }
 `,
 		},
+		// Test case 10, a single modifier modifies all secrets, but ignores the
+		// ones configured using IgnoreFields.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			SelectFields: []string{
+				"block1.block11.pass1",
+				"pass1",
+			},
+			Input: `block1:
+  block11:
+    pass1: pass1
+  pass2: pass2
+pass1: pass1
+pass2: pass2
+`,
+			Expected: `block1:
+  block11:
+    pass1: pass1-modified1
+  pass2: pass2
+pass1: pass1-modified1
+pass2: pass2
+`,
+		},
 	}
 
 	for i, testCase := range testCases {
-		if i != 8 {
+		if i != 9 {
 			continue
 		}
 		config := DefaultConfig()
 		config.ValueModifiers = testCase.ValueModifiers
 		config.IgnoreFields = testCase.IgnoreFields
+		config.SelectFields = testCase.SelectFields
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
