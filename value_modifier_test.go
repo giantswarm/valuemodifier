@@ -405,9 +405,6 @@ pass2: pass2
 	}
 
 	for i, testCase := range testCases {
-		if i != 9 {
-			continue
-		}
 		config := DefaultConfig()
 		config.ValueModifiers = testCase.ValueModifiers
 		config.IgnoreFields = testCase.IgnoreFields
