@@ -17,7 +17,7 @@ func (m testModifier2) Modify(value []byte) ([]byte, error) {
 	return []byte(string(value) + "-modified2"), nil
 }
 
-func Test_ValueModifier_TraverseJSON(t *testing.T) {
+func Test_ValueModifier_Traverse_JSON(t *testing.T) {
 	testCases := []struct {
 		ValueModifiers []ValueModifier
 		IgnoreFields   []string
@@ -85,13 +85,13 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 				"noSecret1",
 			},
 			Input: `{
-  "noSecret1": "foo",
-  "pass1": "pass1"
-}`,
+   "noSecret1": "foo",
+   "pass1": "pass1"
+ }`,
 			Expected: `{
-  "noSecret1": "foo",
-  "pass1": "pass1-modified1"
-}`,
+   "noSecret1": "foo",
+   "pass1": "pass1-modified1"
+ }`,
 		},
 		// Test case 5, multiple modifiers modify all secrets, but ignore the ones
 		// configured using IgnoreFields.
@@ -105,17 +105,17 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 				"noSecret2",
 			},
 			Input: `{
-  "noSecret1": "foo",
-  "noSecret2": "bar",
-  "pass1": "pass1",
-  "pass2": "pass2"
-}`,
+   "noSecret1": "foo",
+   "noSecret2": "bar",
+   "pass1": "pass1",
+   "pass2": "pass2"
+ }`,
 			Expected: `{
-  "noSecret1": "foo",
-  "noSecret2": "bar",
-  "pass1": "pass1-modified1-modified2",
-  "pass2": "pass2-modified1-modified2"
-}`,
+   "noSecret1": "foo",
+   "noSecret2": "bar",
+   "pass1": "pass1-modified1-modified2",
+   "pass2": "pass2-modified1-modified2"
+ }`,
 		},
 		// Test case 6, nested blocks, multiple modifiers modify all secrets, but
 		// ignore the ones configured using IgnoreFields.
@@ -129,41 +129,41 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 				"noSecret2",
 			},
 			Input: `{
-  "block1": {
-    "block11": {
-      "pass1": "pass1"
-    },
-    "pass2": "pass2"
-  },
-  "block2": {
-    "block21": {
-      "pass3": "pass3"
-    },
-    "pass4": "pass4"
-  },
-  "noSecret1": "foo",
-  "noSecret2": "bar",
-  "pass5": "pass5",
-  "pass6": 123456
-}`,
+   "block1": {
+     "block11": {
+       "pass1": "pass1"
+     },
+     "pass2": "pass2"
+   },
+   "block2": {
+     "block21": {
+       "pass3": "pass3"
+     },
+     "pass4": "pass4"
+   },
+   "noSecret1": "foo",
+   "noSecret2": "bar",
+   "pass5": "pass5",
+   "pass6": 123456
+ }`,
 			Expected: `{
-  "block1": {
-    "block11": {
-      "pass1": "pass1-modified1-modified2"
-    },
-    "pass2": "pass2-modified1-modified2"
-  },
-  "block2": {
-    "block21": {
-      "pass3": "pass3-modified1-modified2"
-    },
-    "pass4": "pass4-modified1-modified2"
-  },
-  "noSecret1": "foo",
-  "noSecret2": "bar",
-  "pass5": "pass5-modified1-modified2",
-  "pass6": "123456-modified1-modified2"
-}`,
+   "block1": {
+     "block11": {
+       "pass1": "pass1-modified1-modified2"
+     },
+     "pass2": "pass2-modified1-modified2"
+   },
+   "block2": {
+     "block21": {
+       "pass3": "pass3-modified1-modified2"
+     },
+     "pass4": "pass4-modified1-modified2"
+   },
+   "noSecret1": "foo",
+   "noSecret2": "bar",
+   "pass5": "pass5-modified1-modified2",
+   "pass6": "123456-modified1-modified2"
+ }`,
 		},
 	}
 
@@ -176,7 +176,7 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		output, err := newService.TraverseJSON([]byte(testCase.Input))
+		output, err := newService.Traverse([]byte(testCase.Input))
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
@@ -186,7 +186,7 @@ func Test_ValueModifier_TraverseJSON(t *testing.T) {
 	}
 }
 
-func Test_ValueModifier_TraverseYAML(t *testing.T) {
+func Test_ValueModifier_Traverse_YAML(t *testing.T) {
 	testCases := []struct {
 		ValueModifiers []ValueModifier
 		IgnoreFields   []string
@@ -202,11 +202,11 @@ func Test_ValueModifier_TraverseYAML(t *testing.T) {
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
-pass1: pass1
-`,
+ pass1: pass1
+ `,
 			Expected: `noSecret1: noSecret1-modified1
-pass1: pass1-modified1
-`,
+ pass1: pass1-modified1
+ `,
 		},
 		// Test case 2, a single modifier modifies all numeric secrets.
 		{
@@ -216,11 +216,11 @@ pass1: pass1-modified1
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
-pass1: 12345
-`,
+ pass1: 12345
+ `,
 			Expected: `noSecret1: noSecret1-modified1
-pass1: 12345-modified1
-`,
+ pass1: 12345-modified1
+ `,
 		},
 		// Test case 3, a single modifier modifies all secrets inside lists.
 		{
@@ -230,11 +230,11 @@ pass1: 12345-modified1
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `list1:
-- pass1: pass1
-`,
+ - pass1: pass1
+ `,
 			Expected: `list1:
-- pass1: pass1-modified1
-`,
+ - pass1: pass1-modified1
+ `,
 		},
 		// Test case 4, a single modifier modifies all secrets, but ignores the ones
 		// configured using IgnoreFields.
@@ -247,11 +247,11 @@ pass1: 12345-modified1
 			},
 			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
-pass1: pass1
-`,
+ pass1: pass1
+ `,
 			Expected: `noSecret1: noSecret1
-pass1: pass1-modified1
-`,
+ pass1: pass1-modified1
+ `,
 		},
 		// Test case 5, multiple modifiers modify all secrets, but ignore the ones
 		// configured using IgnoreFields.
@@ -266,15 +266,15 @@ pass1: pass1-modified1
 			},
 			SelectFields: []string{},
 			Input: `noSecret1: noSecret1
-noSecret2: noSecret2
-pass1: pass1
-pass2: pass2
-`,
+ noSecret2: noSecret2
+ pass1: pass1
+ pass2: pass2
+ `,
 			Expected: `noSecret1: noSecret1
-noSecret2: noSecret2
-pass1: pass1-modified1-modified2
-pass2: pass2-modified1-modified2
-`,
+ noSecret2: noSecret2
+ pass1: pass1-modified1-modified2
+ pass2: pass2-modified1-modified2
+ `,
 		},
 		// Test case 6, nested blocks, multiple modifiers modify all secrets, but
 		// ignore the ones configured using IgnoreFields.
@@ -289,31 +289,31 @@ pass2: pass2-modified1-modified2
 			},
 			SelectFields: []string{},
 			Input: `block1:
-  block11:
-    pass1: pass1
-  pass2: pass2
-block2:
-  block21:
-    pass3: pass3
-  pass4: pass4
-noSecret1: foo
-noSecret2: bar
-pass5: pass5
-pass6: 123456
-`,
+   block11:
+     pass1: pass1
+   pass2: pass2
+ block2:
+   block21:
+     pass3: pass3
+   pass4: pass4
+ noSecret1: foo
+ noSecret2: bar
+ pass5: pass5
+ pass6: 123456
+ `,
 			Expected: `block1:
-  block11:
-    pass1: pass1-modified1-modified2
-  pass2: pass2-modified1-modified2
-block2:
-  block21:
-    pass3: pass3-modified1-modified2
-  pass4: pass4-modified1-modified2
-noSecret1: foo
-noSecret2: bar
-pass5: pass5-modified1-modified2
-pass6: 123456-modified1-modified2
-`,
+   block11:
+     pass1: pass1-modified1-modified2
+   pass2: pass2-modified1-modified2
+ block2:
+   block21:
+     pass3: pass3-modified1-modified2
+   pass4: pass4-modified1-modified2
+ noSecret1: foo
+ noSecret2: bar
+ pass5: pass5-modified1-modified2
+ pass6: 123456-modified1-modified2
+ `,
 		},
 		// Test case 7, modifiers modify string blocks.
 		{
@@ -323,14 +323,14 @@ pass6: 123456-modified1-modified2
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `pass1: |
-  foo
-  bar
-`,
+   foo
+   bar
+ `,
 			Expected: `pass1: |-
-  foo
-  bar
-  -modified1
-`,
+   foo
+   bar
+   -modified1
+ `,
 		},
 		// Test case 8, modifiers modify secrets of string blocks representing YAML.
 		{
@@ -340,15 +340,15 @@ pass6: 123456-modified1-modified2
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `pass1: |
-  bar:
-    baz: pass2
-  foo: pass3
-`,
+   bar:
+     baz: pass2
+   foo: pass3
+ `,
 			Expected: `pass1: |
-  bar:
-    baz: pass2-modified1
-  foo: pass3-modified1
-`,
+   bar:
+     baz: pass2-modified1
+   foo: pass3-modified1
+ `,
 		},
 		// Test case 9, modifiers modify secrets of string blocks representing JSON.
 		{
@@ -358,23 +358,23 @@ pass6: 123456-modified1-modified2
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `pass1: |
-  {
-    "block1": {
-      "block11": {
-        "pass2": "pass2"
-      }
-    }
-  }
-`,
+   {
+     "block1": {
+       "block11": {
+         "pass2": "pass2"
+       }
+     }
+   }
+ `,
 			Expected: `pass1: |-
-  {
-    "block1": {
-      "block11": {
-        "pass2": "pass2-modified1"
-      }
-    }
-  }
-`,
+   {
+     "block1": {
+       "block11": {
+         "pass2": "pass2-modified1"
+       }
+     }
+   }
+ `,
 		},
 		// Test case 10, a single modifier modifies all secrets, but ignores the
 		// ones configured using IgnoreFields.
@@ -388,19 +388,19 @@ pass6: 123456-modified1-modified2
 				"pass1",
 			},
 			Input: `block1:
-  block11:
-    pass1: pass1
-  pass2: pass2
-pass1: pass1
-pass2: pass2
-`,
+   block11:
+     pass1: pass1
+   pass2: pass2
+ pass1: pass1
+ pass2: pass2
+ `,
 			Expected: `block1:
-  block11:
-    pass1: pass1-modified1
-  pass2: pass2
-pass1: pass1-modified1
-pass2: pass2
-`,
+   block11:
+     pass1: pass1-modified1
+   pass2: pass2
+ pass1: pass1-modified1
+ pass2: pass2
+ `,
 		},
 	}
 
@@ -414,7 +414,7 @@ pass2: pass2
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		output, err := newService.TraverseYAML([]byte(testCase.Input))
+		output, err := newService.Traverse([]byte(testCase.Input))
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}

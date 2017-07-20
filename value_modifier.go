@@ -2,11 +2,14 @@ package valuemodifier
 
 import (
 	"encoding/json"
+	"fmt"
+	"sort"
 	"strings"
 
+	"github.com/Jeffail/gabs"
+	yamltojson "github.com/ghodss/yaml"
 	microerror "github.com/giantswarm/microkit/error"
-	"github.com/spf13/cast"
-	yaml "gopkg.in/yaml.v1"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // Config represents the configuration used to create a new value modifier
@@ -67,169 +70,185 @@ type Service struct {
 	selectFields []string
 }
 
-func (s *Service) TraverseJSON(input []byte) ([]byte, error) {
-	var m map[string]interface{}
-	err := json.Unmarshal(input, &m)
+// TODO indentation as provided
+// TODO without indentation as provided
+func (s *Service) Traverse(input []byte) ([]byte, error) {
+	jsonBytes, _, _, err := toJSON(input)
 	if err != nil {
 		return nil, microerror.MaskAny(err)
 	}
 
-	var p []string
-	for k, v := range m {
-		m[k] = s.toModifiedValueJSON(k, v, p)
-	}
-	b, err := json.MarshalIndent(m, "", "  ")
+	container, err := gabs.ParseJSON(jsonBytes)
 	if err != nil {
 		return nil, microerror.MaskAny(err)
 	}
 
-	return b, nil
-}
-
-func (s *Service) TraverseYAML(input []byte) ([]byte, error) {
-	var m map[interface{}]interface{}
-	err := yaml.Unmarshal(input, &m)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
+	{
+		var fields []string
+		fields = append(fields, s.ignoreFields...)
+		fields = append(fields, s.selectFields...)
+		err := validateFields(jsonBytes, fields)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 	}
 
-	var p []string
-	for k, v := range m {
-		m[k] = s.toModifiedValueYAML(k, v, p)
-	}
-	b, err := yaml.Marshal(m)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
-	}
-
-	return b, nil
-}
-
-func (s *Service) toModifiedValueJSON(key string, val interface{}, path []string) interface{} {
-	var p []string
-	p = append(p, path...)
-
-	m1, ok := val.(map[string]interface{})
-	if ok {
-		for k, v := range m1 {
-			m1[k] = s.toModifiedValueJSON(k, v, p)
+	var paths []string
+	{
+		paths, err = containerPaths(container)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
 		}
 
-		return m1
-	}
+		if len(s.ignoreFields) != 0 {
+			var newPaths []string
 
-	m2, ok := val.([]interface{})
-	if ok {
-		for i, v := range m2 {
-			m2[i] = s.toModifiedValueJSON("", v, p)
-		}
-
-		return m2
-	}
-
-	str := cast.ToString(val)
-	if str != "" {
-		for _, f := range s.ignoreFields {
-			if f == key {
-				return str
+			for _, p := range paths {
+				if containsString(s.ignoreFields, p) {
+					continue
+				}
+				newPaths = append(newPaths, p)
 			}
+
+			paths = newPaths
+		} else if len(s.selectFields) != 0 {
+			paths = s.selectFields
 		}
+
+		sort.Strings(paths)
+	}
+
+	for _, p := range paths {
+
+		// TODO get value by path
+
+		v := []byte(str)
 		for _, m := range s.valueModifiers {
-			o, err := m.Modify([]byte(str))
+			v, err = m.Modify(v)
 			if err != nil {
-				panic(err)
+				return nil, microerror.MaskAny(err)
 			}
-			str = string(o)
 		}
+		str = string(v)
+
+		// TODO set value by path
 	}
 
-	return str
+	return []byte(container.StringIndent("", "  ")), nil
 }
 
-func (s *Service) toModifiedValueYAML(key interface{}, val interface{}, path []string) interface{} {
-	var p []string
-	p = append(p, path...)
+func containerPaths(c *gabs.Container) ([]string, error) {
+	var paths []string
 
-	m1, ok := val.(map[interface{}]interface{})
-	if ok {
-		for k, v := range m1 {
-			m1[k] = s.toModifiedValueYAML(k, v, p)
-		}
-
-		return m1
-	}
-
-	m2, ok := val.([]interface{})
-	if ok {
-		for i, v := range m2 {
-			m2[i] = s.toModifiedValueYAML("", v, p)
-		}
-
-		return m2
-	}
-
-	str := cast.ToString(val)
-	if str != "" {
-		var m3 map[interface{}]interface{}
-		err := yaml.Unmarshal([]byte(str), &m3)
-		if err != nil || m3 == nil {
-			if len(s.selectFields) == 0 {
-				for _, f := range s.ignoreFields {
-					if f == key {
-						return str
-					}
-				}
-			} else {
-				for _, f := range s.selectFields {
-					if f == strings.Join(append(p, key.(string)), ".") {
-						for _, m := range s.valueModifiers {
-							o, err := m.Modify([]byte(str))
-							if err != nil {
-								panic(err)
-							}
-							str = string(o)
-						}
-					}
-				}
-			}
-
-			if len(s.selectFields) == 0 && len(s.selectFields) == 0 {
-				for _, m := range s.valueModifiers {
-					o, err := m.Modify([]byte(str))
-					if err != nil {
-						panic(err)
-					}
-					str = string(o)
-				}
-			}
+	{
+		cm, err := c.ChildrenMap()
+		if err == gabs.ErrNotObj {
+			//
+		} else if err != nil {
+			return nil, microerror.MaskAny(err)
 		} else {
-			var m4 map[string]interface{}
-			err := json.Unmarshal([]byte(str), &m4)
-			if err != nil || m4 == nil {
-				for k, v := range m3 {
-					m3[k] = s.toModifiedValueYAML(k, v, p)
-				}
-
-				b, err := yaml.Marshal(m3)
+			for k, v := range cm {
+				ps, err := containerPaths(v)
 				if err != nil {
-					panic(err)
+					return nil, microerror.MaskAny(err)
 				}
-
-				return string(b)
-			} else {
-				for k, v := range m4 {
-					m4[k] = s.toModifiedValueJSON(k, v, p)
-				}
-
-				b, err := json.MarshalIndent(m4, "", "  ")
-				if err != nil {
-					panic(err)
-				}
-
-				return string(b)
+				paths = append(paths, strings.Join(append([]string{k}, ps...), "."))
 			}
 		}
 	}
 
-	return str
+	if len(paths) == 0 {
+		ch, err := c.Children()
+		if err == gabs.ErrNotObjOrArray {
+			//
+		} else if err != nil {
+			return nil, microerror.MaskAny(err)
+		} else {
+			for i, v := range ch {
+				ps, err := containerPaths(v)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+				if ps != nil {
+					paths = append(paths, strings.Join(append([]string{fmt.Sprintf("[%d]", i)}, ps...), "."))
+				}
+			}
+		}
+	}
+
+	return paths, nil
+}
+
+func containsString(list []string, item string) bool {
+	for _, l := range list {
+		if l == item {
+			return true
+		}
+	}
+
+	return false
+}
+
+func isJSON(b []byte) bool {
+	var m map[string]interface{}
+	return json.Unmarshal(b, &m) == nil
+}
+
+func isYAML(b []byte) bool {
+	var m map[interface{}]interface{}
+	return yaml.Unmarshal(b, &m) == nil
+}
+
+func toJSON(b []byte) ([]byte, map[string]interface{}, bool, error) {
+	if isJSON(b) {
+		var m map[string]interface{}
+		err := json.Unmarshal(b, &m)
+		if err != nil {
+			return nil, nil, false, microerror.MaskAny(err)
+		}
+
+		return b, m, true, nil
+	}
+
+	var jsonMap map[string]interface{}
+	var jsonBytes []byte
+	{
+		var m map[interface{}]interface{}
+		err := yaml.Unmarshal(b, &m)
+		if err != nil {
+			return nil, nil, false, microerror.MaskAny(err)
+		}
+
+		yamlBytes, err := yaml.Marshal(m)
+		if err != nil {
+			return nil, nil, false, microerror.MaskAny(err)
+		}
+
+		jsonBytes, err = yamltojson.YAMLToJSON(yamlBytes)
+		if err != nil {
+			return nil, nil, false, microerror.MaskAny(err)
+		}
+		err = json.Unmarshal(b, &jsonMap)
+		if err != nil {
+			return nil, nil, false, microerror.MaskAny(err)
+		}
+	}
+
+	return jsonBytes, jsonMap, false, nil
+}
+
+func validateFields(jsonBytes []byte, fields []string) error {
+	gabsJSON, err := gabs.ParseJSON(jsonBytes)
+	if err != nil {
+		return microerror.MaskAny(err)
+	}
+
+	for _, f := range fields {
+		exists := gabsJSON.ExistsP(f)
+		if !exists {
+			return microerror.MaskAnyf(fieldNotFoundError, f)
+		}
+	}
+
+	return nil
 }
