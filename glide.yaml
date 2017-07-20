@@ -8,4 +8,11 @@ import:
   subpackages:
   - openpgp
   - openpgp/armor
-- package: gopkg.in/yaml.v1
+- package: gopkg.in/yaml.v2
+  version: master
+- package: github.com/Jeffail/gabs
+  version: master
+- package: github.com/ghodss/yaml
+  version: master
+- package: github.com/oliveagle/jsonpath
+  version: master
