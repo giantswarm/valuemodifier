@@ -1,7 +1,6 @@
 package path
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -187,55 +186,103 @@ func Test_Service_Get(t *testing.T) {
 }
 
 func Test_Service_Set(t *testing.T) {
-	testCases := []struct {
-		JSONBytes []byte
-		Path      string
-		Value     interface{}
-		Expected  []byte
+	tests := []struct {
+		json     []byte
+		key      string
+		value    string
+		expected []byte
 	}{
-		// Test case 1, ensure the value of an unnested path can be changed.
 		{
-			JSONBytes: []byte(`{
-  "k1": "v1"
+			json: []byte(`{
+	"k1": "v1"
 }`),
-			Path:  "k1",
-			Value: "modified",
-			Expected: []byte(`{
-  "k1": "modified"
+			key:   "k1",
+			value: "modified",
+			expected: []byte(`{
+	"k1": "modified"
 }`),
 		},
-		// Test case 2, ensure the value of a nested path can be changed.
+
 		{
-			JSONBytes: []byte(`{
-  "k1": {
-    "k2": "v2"
-  }
+			json: []byte(`{
+	"k1": "v1",
+	"k2": "v2"
 }`),
-			Path:  "k1.k2",
-			Value: "modified",
-			Expected: []byte(`{
-  "k1": {
-    "k2": "modified"
-  }
+			key:   "k1",
+			value: "modified",
+			expected: []byte(`{
+	"k1": "modified",
+	"k2": "v2"
+}`),
+		},
+
+		{
+			json: []byte(`{
+	"k1": {
+		"k2": "v2"
+	}
+}`),
+			key:   "k1.k2",
+			value: "modified",
+			expected: []byte(`{
+	"k1": {
+		"k2": "modified"
+	}
+}`),
+		},
+
+		{
+			json: []byte(`{
+	"k1": {
+		"k2": "v2"
+	},
+	"k3": "v3"
+}`),
+			key:   "k1.k2",
+			value: "modified",
+			expected: []byte(`{
+	"k1": {
+		"k2": "modified"
+	},
+	"k3": "v3"
+}`),
+		},
+
+		{
+			json: []byte(`{
+	"k1": {
+		"k2": {
+			"k3": "v3"
+		}
+	}
+}`),
+			key:   "k1.k2.k3",
+			value: "modified",
+			expected: []byte(`{
+	"k1": {
+		"k2": {
+			"k3": "modified"
+		}
+	}
 }`),
 		},
 	}
 
-	for i, testCase := range testCases {
+	for index, test := range tests {
 		config := DefaultConfig()
-		config.JSONBytes = testCase.JSONBytes
+		config.JSONBytes = test.json
 		newService, err := New(config)
 		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
+			t.Fatal("test", index, "expected", nil, "got", err)
 		}
 
-		err = newService.Set(testCase.Path, testCase.Value)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
+		if err := newService.Set(test.key, test.value); err != nil {
+			t.Fatal("test", index, "expected", nil, "got", err)
 		}
+
 		output := newService.JSONBytes()
-		if !reflect.DeepEqual(testCase.Expected, output) {
-			t.Fatal("test", i+1, "expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
+		if !reflect.DeepEqual(test.expected, output) {
+			t.Fatal("test", index, "expected", string(test.expected), "got", string(output))
 		}
 	}
 }
