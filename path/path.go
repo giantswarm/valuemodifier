@@ -72,7 +72,7 @@ func (s *Service) All() ([]string, error) {
 	var paths []string
 	{
 		for k, v := range s.jsonMap {
-			ps, err := s.pathsFromInterface(v)
+			ps, err := s.allFromInterface(v)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
@@ -93,15 +93,54 @@ func (s *Service) All() ([]string, error) {
 
 // Get returns the value found under the given path, if any.
 func (s *Service) Get(path string) (interface{}, error) {
-	return nil, nil
+	var err error
+
+	v := interface{}(s.jsonMap)
+
+	for _, k := range strings.Split(path, s.separator) {
+		v, err = s.getFromInterface(k, v)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
+
+	return v, nil
+}
+
+func (s *Service) JSONBytes() []byte {
+	return s.jsonBytes
 }
 
 // Set changes the value of the given path.
 func (s *Service) Set(path string, value interface{}) error {
+	{
+		v := interface{}(s.jsonMap)
+
+		for _, k := range strings.Split(path, s.separator) {
+			uv, err := s.setFromInterface(k, v, value)
+			if err != nil {
+				return microerror.MaskAny(err)
+			}
+			fmt.Printf("uv: %#v\n", uv)
+			s.jsonMap[k] = cast.ToStringMap(uv)[k]
+		}
+	}
+
+	fmt.Printf("s.jsonMap: %#v\n", s.jsonMap)
+
+	{
+		b, err := json.MarshalIndent(s.jsonMap, "", "  ")
+		if err != nil {
+			return microerror.MaskAny(err)
+		}
+		s.jsonBytes = b
+	}
+	fmt.Printf("4\n")
+
 	return nil
 }
 
-func (s *Service) pathsFromInterface(value interface{}) ([]string, error) {
+func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 	var paths []string
 
 	// process map
@@ -111,7 +150,7 @@ func (s *Service) pathsFromInterface(value interface{}) ([]string, error) {
 			// fall through
 		} else {
 			for k, v := range stringMap {
-				ps, err := s.pathsFromInterface(v)
+				ps, err := s.allFromInterface(v)
 				if err != nil {
 					return nil, microerror.MaskAny(err)
 				}
@@ -127,7 +166,7 @@ func (s *Service) pathsFromInterface(value interface{}) ([]string, error) {
 			// fall through
 		} else {
 			for i, v := range slice {
-				ps, err := s.pathsFromInterface(v)
+				ps, err := s.allFromInterface(v)
 				if err != nil {
 					return nil, microerror.MaskAny(err)
 				}
@@ -139,6 +178,134 @@ func (s *Service) pathsFromInterface(value interface{}) ([]string, error) {
 	}
 
 	return paths, nil
+}
+
+func (s *Service) getFromInterface(key string, value interface{}) (interface{}, error) {
+	var newValue interface{}
+
+	// process map
+	{
+		stringMap, err := cast.ToStringMapE(value)
+		if err != nil {
+			// fall through
+		} else {
+			for k, v := range stringMap {
+				if k != key {
+					continue
+				}
+
+				newValue, err = s.getFromInterface(k, v)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				break
+			}
+		}
+	}
+
+	// process slice
+	if newValue == nil {
+		slice, err := cast.ToSliceE(value)
+		if err != nil {
+			// fall through
+		} else {
+			for i, v := range slice {
+				k := fmt.Sprintf("[%d]", i)
+
+				if k != key {
+					continue
+				}
+
+				newValue, err = s.getFromInterface(k, v)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				break
+			}
+		}
+	}
+
+	// value is neither map nor slice
+	if newValue == nil {
+		newValue = value
+	}
+
+	return newValue, nil
+}
+
+func (s *Service) setFromInterface(key string, value, newValue interface{}) (interface{}, error) {
+	fmt.Printf("\n")
+	fmt.Printf("key: %#v\n", key)
+	fmt.Printf("value: %#v\n", value)
+	fmt.Printf("newValue: %#v\n", newValue)
+	fmt.Printf("\n")
+
+	var updatedValue interface{}
+
+	// process map
+	{
+		stringMap, err := cast.ToStringMapE(value)
+		if err != nil {
+			// fall through
+		} else {
+			fmt.Printf("1\n")
+			for k, v := range stringMap {
+				if k != key {
+					continue
+				}
+
+				// key = k1
+				// k = k1
+				// v = { k2: v2 }
+				uv, err := s.setFromInterface(k, v, newValue)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+				stringMap[k] = uv
+				updatedValue = stringMap
+
+				fmt.Printf("updatedValue: %#v\n", updatedValue)
+
+				break
+			}
+		}
+	}
+
+	// process slice
+	if updatedValue == nil {
+		slice, err := cast.ToSliceE(value)
+		if err != nil {
+			// fall through
+		} else {
+			fmt.Printf("2\n")
+			for i, v := range slice {
+				k := fmt.Sprintf("[%d]", i)
+
+				if k != key {
+					continue
+				}
+
+				uv, err := s.setFromInterface(k, v, newValue)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+				slice[i] = uv
+				updatedValue = slice
+
+				break
+			}
+		}
+	}
+
+	// value is neither map nor slice
+	if updatedValue == nil {
+		fmt.Printf("3\n")
+		updatedValue = newValue
+	}
+
+	return updatedValue, nil
 }
 
 func pathWithKey(key string, paths []string, separator string) string {

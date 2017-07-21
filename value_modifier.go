@@ -2,9 +2,7 @@ package valuemodifier
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/Jeffail/gabs"
 	yamltojson "github.com/ghodss/yaml"
@@ -23,8 +21,8 @@ type Config struct {
 	SelectFields []string
 }
 
-// DefaultConfig provides a default configuration to create a new GPG decryption
-// decoding value modifier by best effort.
+// DefaultConfig provides a default configuration to create a new value modifier
+// traverser by best effort.
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
@@ -36,7 +34,7 @@ func DefaultConfig() Config {
 	}
 }
 
-// New creates a new configured GPG decryption value modifier.
+// New creates a new configured value modifier traverser.
 func New(config Config) (*Service, error) {
 	// Dependencies.
 	if len(config.ValueModifiers) == 0 {
@@ -135,48 +133,6 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 	}
 
 	return []byte(container.StringIndent("", "  ")), nil
-}
-
-func containerPaths(c *gabs.Container) ([]string, error) {
-	var paths []string
-
-	{
-		cm, err := c.ChildrenMap()
-		if err == gabs.ErrNotObj {
-			//
-		} else if err != nil {
-			return nil, microerror.MaskAny(err)
-		} else {
-			for k, v := range cm {
-				ps, err := containerPaths(v)
-				if err != nil {
-					return nil, microerror.MaskAny(err)
-				}
-				paths = append(paths, strings.Join(append([]string{k}, ps...), "."))
-			}
-		}
-	}
-
-	if len(paths) == 0 {
-		ch, err := c.Children()
-		if err == gabs.ErrNotObjOrArray {
-			//
-		} else if err != nil {
-			return nil, microerror.MaskAny(err)
-		} else {
-			for i, v := range ch {
-				ps, err := containerPaths(v)
-				if err != nil {
-					return nil, microerror.MaskAny(err)
-				}
-				if ps != nil {
-					paths = append(paths, strings.Join(append([]string{fmt.Sprintf("[%d]", i)}, ps...), "."))
-				}
-			}
-		}
-	}
-
-	return paths, nil
 }
 
 func containsString(list []string, item string) bool {
