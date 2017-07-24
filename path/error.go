@@ -18,9 +18,9 @@ func IsKeyNotIndex(err error) bool {
 	return errgo.Cause(err) == keyNotIndexError
 }
 
-var pathNotFoundError = errgo.New("path not index")
+var notFoundError = errgo.New("not found")
 
-// IsPathNotFound asserts pathNotFoundError.
-func IsPathNotFound(err error) bool {
-	return errgo.Cause(err) == pathNotFoundError
+// IsNotFound asserts notFoundError.
+func IsNotFound(err error) bool {
+	return errgo.Cause(err) == notFoundError
 }

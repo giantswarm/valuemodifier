@@ -95,18 +95,12 @@ func (s *Service) All() ([]string, error) {
 
 // Get returns the value found under the given path, if any.
 func (s *Service) Get(path string) (interface{}, error) {
-	var err error
-
-	v := s.jsonStructure
-
-	for _, k := range strings.Split(path, s.separator) {
-		v, err = s.getFromInterface(k, v)
-		if err != nil {
-			return nil, microerror.MaskAny(err)
-		}
+	value, err := s.getFromInterface(path, s.jsonStructure)
+	if err != nil {
+		return nil, microerror.MaskAny(err)
 	}
 
-	return v, nil
+	return value, nil
 }
 
 func (s *Service) JSONBytes() []byte {
@@ -171,7 +165,7 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 	return paths, nil
 }
 
-func (s *Service) getFromInterface(key string, value interface{}) (interface{}, error) {
+func (s *Service) getFromInterface(path string, value interface{}) (interface{}, error) {
 	var newValue interface{}
 
 	// process map
@@ -180,17 +174,29 @@ func (s *Service) getFromInterface(key string, value interface{}) (interface{}, 
 		if err != nil {
 			// fall through
 		} else {
-			for k, v := range stringMap {
-				if k != key {
-					continue
-				}
+			split := strings.Split(path, s.separator)
 
-				newValue, err = s.getFromInterface(k, v)
-				if err != nil {
-					return nil, microerror.MaskAny(err)
+			if len(split) == 1 {
+				v, ok := stringMap[path] // TODO do if ok check once
+				if ok {
+					return v, nil
+				} else {
+					return nil, microerror.MaskAnyf(notFoundError, path)
 				}
+			} else {
+				v, ok := stringMap[split[0]]
+				if ok {
+					recursedKey := strings.Join(split[1:], s.separator)
 
-				break
+					r, err := s.getFromInterface(recursedKey, v)
+					if err != nil {
+						return nil, microerror.MaskAny(err)
+					}
+
+					return r, nil
+				} else {
+					return nil, microerror.MaskAnyf(notFoundError, path)
+				}
 			}
 		}
 	}
@@ -201,20 +207,24 @@ func (s *Service) getFromInterface(key string, value interface{}) (interface{}, 
 		if err != nil {
 			// fall through
 		} else {
-			for i, v := range slice {
-				k := fmt.Sprintf("[%d]", i)
+			split := strings.Split(path, s.separator)
 
-				if k != key {
-					continue
-				}
-
-				newValue, err = s.getFromInterface(k, v)
-				if err != nil {
-					return nil, microerror.MaskAny(err)
-				}
-
-				break
+			index, err := indexFromKey(split[0])
+			if err != nil {
+				return nil, microerror.MaskAny(err)
 			}
+
+			if index >= len(slice) {
+				return nil, microerror.MaskAnyf(notFoundError, split[0])
+			}
+			recursedKey := strings.Join(split[1:], s.separator)
+
+			r, err := s.getFromInterface(recursedKey, slice[index])
+			if err != nil {
+				return nil, microerror.MaskAny(err)
+			}
+
+			return r, nil
 		}
 	}
 
@@ -226,6 +236,7 @@ func (s *Service) getFromInterface(key string, value interface{}) (interface{}, 
 	return newValue, nil
 }
 
+// TODO interface: path, value, jsonStructure
 func (s *Service) setFromInterface(jsonStructure interface{}, path string, value interface{}) (interface{}, error) {
 	// process map
 	{
@@ -241,7 +252,7 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 					stringMap[path] = value
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(pathNotFoundError, path)
+					return nil, microerror.MaskAnyf(notFoundError, path)
 				}
 			} else {
 				_, ok := stringMap[split[0]]
@@ -256,7 +267,7 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(pathNotFoundError, path)
+					return nil, microerror.MaskAnyf(notFoundError, path)
 				}
 			}
 		}
@@ -276,7 +287,7 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(pathNotFoundError, split[0])
+				return nil, microerror.MaskAnyf(notFoundError, split[0])
 			}
 			recursedKey := strings.Join(split[1:], s.separator)
 

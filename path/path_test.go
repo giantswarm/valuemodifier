@@ -185,6 +185,70 @@ func Test_Service_Get(t *testing.T) {
 	}
 }
 
+func Test_Service_Get_Error(t *testing.T) {
+	textCases := []struct {
+		JSONBytes    []byte
+		Path         string
+		ErrorMatcher func(error) bool
+	}{
+		// Test 1, when there is only 1 element in the list index [1] cannot be
+		// found.
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Path:         "k1.[1].k2",
+			ErrorMatcher: IsNotFound,
+		},
+
+		// Test 2, when there is k1 at the beginning of the path key k3 cannot be
+		// found.
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Path:         "k3.[0].k2",
+			ErrorMatcher: IsNotFound,
+		},
+
+		// Test 3, when there is k2 at the end of the path key k3 cannot be
+		// found.
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Path:         "k1.[0].k3",
+			ErrorMatcher: IsNotFound,
+		},
+	}
+
+	for i, tc := range textCases {
+		config := DefaultConfig()
+		config.JSONBytes = tc.JSONBytes
+		newService, err := New(config)
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
+
+		_, err = newService.Get(tc.Path)
+		if !tc.ErrorMatcher(err) {
+			t.Fatal("test", i+1, "expected", true, "got", false)
+		}
+	}
+}
+
 func Test_Service_Set(t *testing.T) {
 	textCases := []struct {
 		JSONBytes []byte
@@ -380,7 +444,7 @@ func Test_Service_Set_Error(t *testing.T) {
   ]
 }`),
 			Path:         "k1.[1].k2",
-			ErrorMatcher: IsPathNotFound,
+			ErrorMatcher: IsNotFound,
 		},
 
 		// Test 2, when there is k1 at the beginning of the path key k3 cannot be
@@ -394,7 +458,7 @@ func Test_Service_Set_Error(t *testing.T) {
   ]
 }`),
 			Path:         "k3.[0].k2",
-			ErrorMatcher: IsPathNotFound,
+			ErrorMatcher: IsNotFound,
 		},
 
 		// Test 3, when there is k2 at the end of the path key k3 cannot be
@@ -408,7 +472,7 @@ func Test_Service_Set_Error(t *testing.T) {
   ]
 }`),
 			Path:         "k1.[0].k3",
-			ErrorMatcher: IsPathNotFound,
+			ErrorMatcher: IsNotFound,
 		},
 	}
 
