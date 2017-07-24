@@ -111,7 +111,7 @@ func (s *Service) JSONBytes() []byte {
 func (s *Service) Set(path string, value interface{}) error {
 	var err error
 
-	s.jsonStructure, err = s.setFromInterface(s.jsonStructure, path, value)
+	s.jsonStructure, err = s.setFromInterface(path, value, s.jsonStructure)
 	if err != nil {
 		return microerror.MaskAny(err)
 	}
@@ -224,8 +224,7 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 	return nil, nil
 }
 
-// TODO interface: path, value, jsonStructure
-func (s *Service) setFromInterface(jsonStructure interface{}, path string, value interface{}) (interface{}, error) {
+func (s *Service) setFromInterface(path string, value interface{}, jsonStructure interface{}) (interface{}, error) {
 	// process map
 	{
 		stringMap, err := cast.ToStringMapE(jsonStructure)
@@ -247,7 +246,7 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 				if ok {
 					recPath := strings.Join(split[1:], s.separator)
 
-					modified, err := s.setFromInterface(stringMap[split[0]], recPath, value)
+					modified, err := s.setFromInterface(recPath, value, stringMap[split[0]])
 					if err != nil {
 						return nil, microerror.MaskAny(err)
 					}
@@ -279,7 +278,7 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
-			modified, err := s.setFromInterface(slice[index], recPath, value)
+			modified, err := s.setFromInterface(recPath, value, slice[index])
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
