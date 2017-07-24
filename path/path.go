@@ -165,45 +165,38 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 	return paths, nil
 }
 
-func (s *Service) getFromInterface(path string, value interface{}) (interface{}, error) {
-	var newValue interface{}
-
+func (s *Service) getFromInterface(path string, jsonStructure interface{}) (interface{}, error) {
 	// process map
 	{
-		stringMap, err := cast.ToStringMapE(value)
+		stringMap, err := cast.ToStringMapE(jsonStructure)
 		if err != nil {
 			// fall through
 		} else {
 			split := strings.Split(path, s.separator)
 
-			if len(split) == 1 {
-				v, ok := stringMap[path] // TODO do if ok check once
-				if ok {
-					return v, nil
+			value, ok := stringMap[split[0]]
+			if ok {
+				if len(split) == 1 {
+					return value, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, path)
-				}
-			} else {
-				v, ok := stringMap[split[0]]
-				if ok {
-					recursedKey := strings.Join(split[1:], s.separator)
+					recPath := strings.Join(split[1:], s.separator)
 
-					r, err := s.getFromInterface(recursedKey, v)
+					value, err := s.getFromInterface(recPath, value)
 					if err != nil {
 						return nil, microerror.MaskAny(err)
 					}
 
-					return r, nil
-				} else {
-					return nil, microerror.MaskAnyf(notFoundError, path)
+					return value, nil
 				}
+			} else {
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
 			}
 		}
 	}
 
 	// process slice
-	if newValue == nil {
-		slice, err := cast.ToSliceE(value)
+	{
+		slice, err := cast.ToSliceE(jsonStructure)
 		if err != nil {
 			// fall through
 		} else {
@@ -215,25 +208,20 @@ func (s *Service) getFromInterface(path string, value interface{}) (interface{},
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, split[0])
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", split[0])
 			}
-			recursedKey := strings.Join(split[1:], s.separator)
+			recPath := strings.Join(split[1:], s.separator)
 
-			r, err := s.getFromInterface(recursedKey, slice[index])
+			value, err := s.getFromInterface(recPath, slice[index])
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
 
-			return r, nil
+			return value, nil
 		}
 	}
 
-	// value is neither map nor slice
-	if newValue == nil {
-		newValue = value
-	}
-
-	return newValue, nil
+	return nil, nil
 }
 
 // TODO interface: path, value, jsonStructure
@@ -252,14 +240,14 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 					stringMap[path] = value
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, path)
+					return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
 				}
 			} else {
 				_, ok := stringMap[split[0]]
 				if ok {
-					recursedKey := strings.Join(split[1:], s.separator)
+					recPath := strings.Join(split[1:], s.separator)
 
-					modified, err := s.setFromInterface(stringMap[split[0]], recursedKey, value)
+					modified, err := s.setFromInterface(stringMap[split[0]], recPath, value)
 					if err != nil {
 						return nil, microerror.MaskAny(err)
 					}
@@ -267,7 +255,7 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, path)
+					return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
 				}
 			}
 		}
@@ -287,11 +275,11 @@ func (s *Service) setFromInterface(jsonStructure interface{}, path string, value
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, split[0])
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", split[0])
 			}
-			recursedKey := strings.Join(split[1:], s.separator)
+			recPath := strings.Join(split[1:], s.separator)
 
-			modified, err := s.setFromInterface(slice[index], recursedKey, value)
+			modified, err := s.setFromInterface(slice[index], recPath, value)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
