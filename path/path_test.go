@@ -194,76 +194,95 @@ func Test_Service_Set(t *testing.T) {
 	}{
 		{
 			json: []byte(`{
-	"k1": "v1"
+  "k1": "v1"
 }`),
 			key:   "k1",
 			value: "modified",
 			expected: []byte(`{
-	"k1": "modified"
+  "k1": "modified"
 }`),
 		},
 
 		{
 			json: []byte(`{
-	"k1": "v1",
-	"k2": "v2"
+  "k1": "v1",
+  "k2": "v2"
 }`),
 			key:   "k1",
 			value: "modified",
 			expected: []byte(`{
-	"k1": "modified",
-	"k2": "v2"
+  "k1": "modified",
+  "k2": "v2"
 }`),
 		},
 
 		{
 			json: []byte(`{
-	"k1": {
-		"k2": "v2"
-	}
+  "k1": {
+    "k2": "v2"
+  }
 }`),
 			key:   "k1.k2",
 			value: "modified",
 			expected: []byte(`{
-	"k1": {
-		"k2": "modified"
-	}
+  "k1": {
+    "k2": "modified"
+  }
 }`),
 		},
 
 		{
 			json: []byte(`{
-	"k1": {
-		"k2": "v2"
-	},
-	"k3": "v3"
+  "k1": {
+    "k2": "v2"
+  },
+  "k3": "v3"
 }`),
 			key:   "k1.k2",
 			value: "modified",
 			expected: []byte(`{
-	"k1": {
-		"k2": "modified"
-	},
-	"k3": "v3"
+  "k1": {
+    "k2": "modified"
+  },
+  "k3": "v3"
 }`),
 		},
 
 		{
 			json: []byte(`{
-	"k1": {
-		"k2": {
-			"k3": "v3"
-		}
-	}
+  "k1": {
+    "k2": {
+      "k3": "v3"
+    }
+  }
 }`),
 			key:   "k1.k2.k3",
 			value: "modified",
 			expected: []byte(`{
-	"k1": {
-		"k2": {
-			"k3": "modified"
-		}
-	}
+  "k1": {
+    "k2": {
+      "k3": "modified"
+    }
+  }
+}`),
+		},
+
+		{
+			json: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			key:   "k1.k2.k3",
+			value: "modified",
+			expected: []byte(`{
+  "k1": {
+    "k2": {
+      "k3": "modified"
+    }
+  }
 }`),
 		},
 	}
