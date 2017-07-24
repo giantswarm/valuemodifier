@@ -186,61 +186,65 @@ func Test_Service_Get(t *testing.T) {
 }
 
 func Test_Service_Set(t *testing.T) {
-	tests := []struct {
-		json     []byte
-		key      string
-		value    string
-		expected []byte
+	textCases := []struct {
+		JSONBytes []byte
+		Path      string
+		Value     string
+		Expected  []byte
 	}{
+		// Test 1,
 		{
-			json: []byte(`{
+			JSONBytes: []byte(`{
   "k1": "v1"
 }`),
-			key:   "k1",
-			value: "modified",
-			expected: []byte(`{
+			Path:  "k1",
+			Value: "modified",
+			Expected: []byte(`{
   "k1": "modified"
 }`),
 		},
 
+		// Test 2,
 		{
-			json: []byte(`{
+			JSONBytes: []byte(`{
   "k1": "v1",
   "k2": "v2"
 }`),
-			key:   "k1",
-			value: "modified",
-			expected: []byte(`{
+			Path:  "k1",
+			Value: "modified",
+			Expected: []byte(`{
   "k1": "modified",
   "k2": "v2"
 }`),
 		},
 
+		// Test 3,
 		{
-			json: []byte(`{
+			JSONBytes: []byte(`{
   "k1": {
     "k2": "v2"
   }
 }`),
-			key:   "k1.k2",
-			value: "modified",
-			expected: []byte(`{
+			Path:  "k1.k2",
+			Value: "modified",
+			Expected: []byte(`{
   "k1": {
     "k2": "modified"
   }
 }`),
 		},
 
+		// Test 4,
 		{
-			json: []byte(`{
+			JSONBytes: []byte(`{
   "k1": {
     "k2": "v2"
   },
   "k3": "v3"
 }`),
-			key:   "k1.k2",
-			value: "modified",
-			expected: []byte(`{
+			Path:  "k1.k2",
+			Value: "modified",
+			Expected: []byte(`{
   "k1": {
     "k2": "modified"
   },
@@ -248,17 +252,18 @@ func Test_Service_Set(t *testing.T) {
 }`),
 		},
 
+		// Test 5,
 		{
-			json: []byte(`{
+			JSONBytes: []byte(`{
   "k1": {
     "k2": {
       "k3": "v3"
     }
   }
 }`),
-			key:   "k1.k2.k3",
-			value: "modified",
-			expected: []byte(`{
+			Path:  "k1.k2.k3",
+			Value: "modified",
+			Expected: []byte(`{
   "k1": {
     "k2": {
       "k3": "modified"
@@ -267,41 +272,157 @@ func Test_Service_Set(t *testing.T) {
 }`),
 		},
 
+		// Test 6,
 		{
-			json: []byte(`{
+			JSONBytes: []byte(`[
+  {
+    "k1": "v1"
+  }
+]`),
+			Path:  "[0].k1",
+			Value: "modified",
+			Expected: []byte(`[
+  {
+    "k1": "modified"
+  }
+]`),
+		},
+
+		// Test 7,
+		{
+			JSONBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
     }
   ]
 }`),
-			key:   "k1.k2.k3",
-			value: "modified",
-			expected: []byte(`{
-  "k1": {
-    "k2": {
-      "k3": "modified"
+			Path:  "k1.[0].k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": [
+    {
+      "k2": "modified"
     }
-  }
+  ]
+}`),
+		},
+
+		// Test 8,
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    [
+      {
+        "k2": "v2"
+      }
+    ],
+    [
+      {
+        "k3": "v3"
+      }
+    ]
+  ]
+}`),
+			Path:  "k1.[1].[0].k3",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": [
+    [
+      {
+        "k2": "v2"
+      }
+    ],
+    [
+      {
+        "k3": "modified"
+      }
+    ]
+  ]
 }`),
 		},
 	}
 
-	for index, test := range tests {
+	for i, tc := range textCases {
 		config := DefaultConfig()
-		config.JSONBytes = test.json
+		config.JSONBytes = tc.JSONBytes
 		newService, err := New(config)
 		if err != nil {
-			t.Fatal("test", index, "expected", nil, "got", err)
+			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		if err := newService.Set(test.key, test.value); err != nil {
-			t.Fatal("test", index, "expected", nil, "got", err)
+		err = newService.Set(tc.Path, tc.Value)
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
 		output := newService.JSONBytes()
-		if !reflect.DeepEqual(test.expected, output) {
-			t.Fatal("test", index, "expected", string(test.expected), "got", string(output))
+		if !reflect.DeepEqual(tc.Expected, output) {
+			t.Fatal("test", i+1, "expected", string(tc.Expected), "got", string(output))
+		}
+	}
+}
+
+func Test_Service_Set_Error(t *testing.T) {
+	textCases := []struct {
+		JSONBytes    []byte
+		Path         string
+		ErrorMatcher func(error) bool
+	}{
+		// Test 1, when there is only 1 element in the list index [1] cannot be
+		// found.
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Path:         "k1.[1].k2",
+			ErrorMatcher: IsPathNotFound,
+		},
+
+		// Test 2, when there is k1 at the beginning of the path key k3 cannot be
+		// found.
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Path:         "k3.[0].k2",
+			ErrorMatcher: IsPathNotFound,
+		},
+
+		// Test 3, when there is k2 at the end of the path key k3 cannot be
+		// found.
+		{
+			JSONBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Path:         "k1.[0].k3",
+			ErrorMatcher: IsPathNotFound,
+		},
+	}
+
+	for i, tc := range textCases {
+		config := DefaultConfig()
+		config.JSONBytes = tc.JSONBytes
+		newService, err := New(config)
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
+
+		err = newService.Set(tc.Path, "value")
+		if !tc.ErrorMatcher(err) {
+			t.Fatal("test", i+1, "expected", true, "got", false)
 		}
 	}
 }

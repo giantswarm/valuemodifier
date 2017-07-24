@@ -3,7 +3,9 @@ package path
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	microerror "github.com/giantswarm/microkit/error"
@@ -37,9 +39,9 @@ func New(config Config) (*Service, error) {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Separator must not be empty")
 	}
 
-	var jsonMap map[string]interface{}
+	var jsonStructure interface{}
 	{
-		err := json.Unmarshal(config.JSONBytes, &jsonMap)
+		err := json.Unmarshal(config.JSONBytes, &jsonStructure)
 		if err != nil {
 			return nil, microerror.MaskAny(err)
 		}
@@ -47,7 +49,7 @@ func New(config Config) (*Service, error) {
 
 	newService := &Service{
 		// Internals.
-		jsonMap: jsonMap,
+		jsonStructure: jsonStructure,
 
 		// Settings.
 		jsonBytes: config.JSONBytes,
@@ -60,7 +62,7 @@ func New(config Config) (*Service, error) {
 // Service implements the path service.
 type Service struct {
 	// Internals.
-	jsonMap map[string]interface{}
+	jsonStructure interface{}
 
 	// Settings.
 	jsonBytes []byte
@@ -71,7 +73,7 @@ type Service struct {
 func (s *Service) All() ([]string, error) {
 	var paths []string
 	{
-		for k, v := range s.jsonMap {
+		for k, v := range cast.ToStringMap(s.jsonStructure) {
 			ps, err := s.allFromInterface(v)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
@@ -95,7 +97,7 @@ func (s *Service) All() ([]string, error) {
 func (s *Service) Get(path string) (interface{}, error) {
 	var err error
 
-	v := interface{}(s.jsonMap)
+	v := s.jsonStructure
 
 	for _, k := range strings.Split(path, s.separator) {
 		v, err = s.getFromInterface(k, v)
@@ -113,39 +115,18 @@ func (s *Service) JSONBytes() []byte {
 
 // Set changes the value of the given path.
 func (s *Service) Set(path string, value interface{}) error {
-	s.jsonMap = cast.ToStringMap(s.setFromInterface(s.jsonMap, path, value))
+	var err error
 
-	b, err := json.MarshalIndent(s.jsonMap, "", "	")
+	s.jsonStructure, err = s.setFromInterface(s.jsonStructure, path, value)
 	if err != nil {
-		return err // TODO: Microerror
+		return microerror.MaskAny(err)
+	}
+
+	b, err := json.MarshalIndent(s.jsonStructure, "", "  ")
+	if err != nil {
+		return microerror.MaskAny(err)
 	}
 	s.jsonBytes = b
-
-	return nil
-}
-
-func (s *Service) setFromInterface(j interface{}, k string, v interface{}) interface{} {
-	stringMap := cast.ToStringMap(j)
-	keyPath := strings.Split(k, s.separator)
-
-	if len(keyPath) == 1 {
-		if _, ok := stringMap[k]; ok {
-			stringMap[k] = v
-			return stringMap
-		} else {
-			fmt.Println("key not found")
-		}
-	} else {
-		if _, ok := stringMap[keyPath[0]]; ok {
-			recursedKey := strings.Join(keyPath[1:], s.separator)
-			modified := s.setFromInterface(stringMap[keyPath[0]], recursedKey, v)
-			stringMap[keyPath[0]] = modified
-
-			return stringMap
-		} else {
-			fmt.Println("key not found")
-		}
-	}
 
 	return nil
 }
@@ -243,6 +224,89 @@ func (s *Service) getFromInterface(key string, value interface{}) (interface{}, 
 	}
 
 	return newValue, nil
+}
+
+func (s *Service) setFromInterface(jsonStructure interface{}, path string, value interface{}) (interface{}, error) {
+	// process map
+	{
+		stringMap, err := cast.ToStringMapE(jsonStructure)
+		if err != nil {
+			// fall through
+		} else {
+			split := strings.Split(path, s.separator)
+
+			if len(split) == 1 {
+				_, ok := stringMap[path]
+				if ok {
+					stringMap[path] = value
+					return stringMap, nil
+				} else {
+					return nil, microerror.MaskAnyf(pathNotFoundError, path)
+				}
+			} else {
+				_, ok := stringMap[split[0]]
+				if ok {
+					recursedKey := strings.Join(split[1:], s.separator)
+
+					modified, err := s.setFromInterface(stringMap[split[0]], recursedKey, value)
+					if err != nil {
+						return nil, microerror.MaskAny(err)
+					}
+					stringMap[split[0]] = modified
+
+					return stringMap, nil
+				} else {
+					return nil, microerror.MaskAnyf(pathNotFoundError, path)
+				}
+			}
+		}
+	}
+
+	// process slice
+	{
+		slice, err := cast.ToSliceE(jsonStructure)
+		if err != nil {
+			// fall through
+		} else {
+			split := strings.Split(path, s.separator)
+
+			index, err := indexFromKey(split[0])
+			if err != nil {
+				return nil, microerror.MaskAny(err)
+			}
+
+			if index >= len(slice) {
+				return nil, microerror.MaskAnyf(pathNotFoundError, split[0])
+			}
+			recursedKey := strings.Join(split[1:], s.separator)
+
+			modified, err := s.setFromInterface(slice[index], recursedKey, value)
+			if err != nil {
+				return nil, microerror.MaskAny(err)
+			}
+			slice[index] = modified
+
+			return slice, nil
+		}
+	}
+
+	return nil, nil
+}
+
+func indexFromKey(key string) (int, error) {
+	re := regexp.MustCompile("\\[[0-9]\\]")
+	ok := re.MatchString(key)
+	if !ok {
+		return 0, microerror.MaskAnyf(keyNotIndexError, key)
+	}
+
+	s := key[1 : len(key)-1]
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, microerror.MaskAny(err)
+	}
+
+	return i, nil
 }
 
 func pathWithKey(key string, paths []string, separator string) string {
