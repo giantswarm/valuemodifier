@@ -1,5 +1,5 @@
-hash: ca21a00ff2c6161f23ad5d974446a3dc98bdc2f0495878b51d7b028a39788a9d
-updated: 2017-07-20T23:03:25.252840307+02:00
+hash: 95a59c8981606ab480b780d137643c1d23d1f420fe851772d614a4408bef74b1
+updated: 2017-07-25T15:52:05.266812939+02:00
 imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
@@ -7,20 +7,12 @@ imports:
   version: c2f273484a749a94402dc3cfbd02913f57995484
   subpackages:
   - error
-- name: github.com/Jeffail/gabs
-  version: 9cef256b595a9e616eb6aec1da446529b7705613
 - name: github.com/juju/errgo
   version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
-- name: github.com/mohae/utilitybelt
-  version: d4f15c760e5a10346e7a4f25537ae32d3c839d83
-  subpackages:
-  - deepcopy
-- name: github.com/oliveagle/jsonpath
-  version: 46b039cf586ce41b6ef05286230e38b648bbffe2
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: golang.org/x/crypto
-  version: 6914964337150723782436d56b3f21610a74ce7b
+  version: 69be088f860613049aa58c65154d1b1d32bbdf90
   subpackages:
   - cast5
   - openpgp
@@ -29,6 +21,8 @@ imports:
   - openpgp/errors
   - openpgp/packet
   - openpgp/s2k
+- name: gopkg.in/yaml.v1
+  version: 9f9df34309c04878acc86042b16630b0f696e1de
 - name: gopkg.in/yaml.v2
-  version: 3b4ad1db5b2a649883ff3782f5f9f6fb52be71af
+  version: 25c4ec802a7d637f88d584ab26798e94ad14c13b
 testImports: []
