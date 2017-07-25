@@ -86,24 +86,12 @@ type Service struct {
 
 // All returns all paths found in the configured JSON structure.
 func (s *Service) All() ([]string, error) {
-	var paths []string
-	{
-		for k, v := range cast.ToStringMap(s.jsonStructure) {
-			ps, err := s.allFromInterface(v)
-			if err != nil {
-				return nil, microerror.MaskAny(err)
-			}
-			if ps != nil {
-				for _, p := range ps {
-					paths = append(paths, pathWithKey(k, []string{p}, s.separator))
-				}
-			} else {
-				paths = append(paths, pathWithKey(k, ps, s.separator))
-			}
-		}
-
-		sort.Strings(paths)
+	paths, err := s.allFromInterface(s.jsonStructure)
+	if err != nil {
+		return nil, microerror.MaskAny(err)
 	}
+
+	sort.Strings(paths)
 
 	return paths, nil
 }
@@ -160,7 +148,7 @@ func (s *Service) Validate(paths []string) error {
 			continue
 		}
 
-		return microerror.MaskAnyf(notFoundError, "path '%s' not found", p)
+		return microerror.MaskAnyf(notFoundError, "path '%s'", p)
 	}
 
 	return nil
@@ -180,7 +168,14 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 				if err != nil {
 					return nil, microerror.MaskAny(err)
 				}
-				paths = append(paths, pathWithKey(k, ps, s.separator))
+
+				if ps != nil {
+					for _, p := range ps {
+						paths = append(paths, fmt.Sprintf("%s%s%s", k, s.separator, p))
+					}
+				} else {
+					paths = append(paths, k)
+				}
 			}
 
 			return paths, nil
@@ -200,8 +195,9 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 				if err != nil {
 					return nil, microerror.MaskAny(err)
 				}
-				if ps != nil {
-					paths = append(paths, pathWithKey(fmt.Sprintf("[%d]", i), ps, s.separator))
+
+				for _, p := range ps {
+					paths = append(paths, fmt.Sprintf("[%d]%s%s", i, s.separator, p))
 				}
 			}
 
@@ -262,7 +258,7 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 					return v, nil
 				}
 			} else {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
 			}
 		}
 	}
@@ -279,7 +275,7 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", split[0])
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", split[0])
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
@@ -336,7 +332,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 					stringMap[path] = value
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
+					return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
 				}
 			} else {
 				_, ok := stringMap[split[0]]
@@ -351,7 +347,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
+					return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
 				}
 			}
 		}
@@ -369,7 +365,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", split[0])
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", split[0])
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
@@ -471,8 +467,8 @@ func isYAMLObject(b []byte) bool {
 	return yaml.Unmarshal(b, &m) == nil && !bytes.HasPrefix(b, []byte("-"))
 }
 
-func pathWithKey(key string, paths []string, separator string) string {
-	return strings.Join(append([]string{key}, paths...), separator)
+func pathWithKey(key string, path string, separator string) string {
+	return strings.Join([]string{key, path}, separator)
 }
 
 func toJSON(b []byte) ([]byte, bool, error) {

@@ -384,6 +384,7 @@ pass6: 123456-modified1-modified2
   }
 `,
 		},
+
 		// Test case 10, a single modifier modifies all secrets, but ignores the
 		// ones configured using IgnoreFields.
 		{
@@ -408,6 +409,57 @@ pass2: pass2
   pass2: pass2
 pass1: pass1-modified1
 pass2: pass2
+`,
+		},
+
+		// Test case 11, ensure a real world example works.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			SelectFields: []string{
+				"Installation.V1.Secret.Alertmanager.Nginx.Auth",
+			},
+			Input: `Installation:
+  V1:
+    Secret:
+      Alertmanager:
+        Nginx:
+          Auth: magic
+      Prometheus:
+        Nginx:
+          Auth: magic
+      Registry:
+        PullSecret:
+          DockerConfigJSON: |-
+            {
+              "auths": {
+                "quay.io": {
+                  "auth": "magic"
+                }
+              }
+            }
+`,
+			Expected: `Installation:
+  V1:
+    Secret:
+      Alertmanager:
+        Nginx:
+          Auth: magic-modified1
+      Prometheus:
+        Nginx:
+          Auth: magic
+      Registry:
+        PullSecret:
+          DockerConfigJSON: |-
+            {
+              "auths": {
+                "quay.io": {
+                  "auth": "magic"
+                }
+              }
+            }
 `,
 		},
 	}
