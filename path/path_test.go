@@ -284,6 +284,20 @@ k4:
 				"k1.[1].k3",
 			},
 		},
+
+		// Test case 19, ensure paths with separators inside keys can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": {
+    "k2.k3": {
+      "k4": "v4"
+    }
+  }
+}`),
+			Expected: []string{
+				`k1.k2\.k3.k4`,
+			},
+		},
 	}
 
 	for i, testCase := range testCases {
@@ -496,6 +510,20 @@ k4:
 }`),
 			Path:     "k1.[0].k2",
 			Expected: "v2",
+		},
+
+		// Test case 16, ensure the value of paths with separators inside keys can
+		// be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": {
+    "k2.k3": {
+      "k4": "v4"
+    }
+  }
+}`),
+			Path:     `k1.k2\.k3.k4`,
+			Expected: "v4",
 		},
 	}
 
@@ -963,6 +991,27 @@ k4:
   "k1": ` + strconv.Quote(`- k2: modified
 - k3: v3
 `) + `
+}`),
+		},
+
+		// Test case 21, ensure the value of paths with separators inside keys can
+		// be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": {
+    "k2.k3": {
+      "k4": "v4"
+    }
+  }
+}`),
+			Path:  `k1.k2\.k3.k4`,
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": {
+    "k2.k3": {
+      "k4": "modified"
+    }
+  }
 }`),
 		},
 	}

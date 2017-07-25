@@ -16,6 +16,14 @@ import (
 	"github.com/spf13/cast"
 )
 
+const (
+	escapedSeparatorPlaceholder = "%%PLACEHOLDER%%"
+)
+
+var (
+	placeholderExpression = regexp.MustCompile(escapedSeparatorPlaceholder)
+)
+
 // Config represents the configuration used to create a new path service.
 type Config struct {
 	// Settings.
@@ -62,9 +70,11 @@ func New(config Config) (*Service, error) {
 
 	newService := &Service{
 		// Internals.
-		isJSON:        isJSON,
-		jsonBytes:     jsonBytes,
-		jsonStructure: jsonStructure,
+		isJSON:                     isJSON,
+		jsonBytes:                  jsonBytes,
+		jsonStructure:              jsonStructure,
+		escapedSeparatorExpression: regexp.MustCompile(fmt.Sprintf(`\\%s`, config.Separator)),
+		separatorExpression:        regexp.MustCompile(fmt.Sprintf(`\%s`, config.Separator)),
 
 		// Settings.
 		separator: config.Separator,
@@ -76,9 +86,11 @@ func New(config Config) (*Service, error) {
 // Service implements the path service.
 type Service struct {
 	// Internals.
-	isJSON        bool
-	jsonBytes     []byte
-	jsonStructure interface{}
+	isJSON                     bool
+	jsonBytes                  []byte
+	jsonStructure              interface{}
+	escapedSeparatorExpression *regexp.Regexp
+	separatorExpression        *regexp.Regexp
 
 	// Settings.
 	separator string
@@ -98,7 +110,7 @@ func (s *Service) All() ([]string, error) {
 
 // Get returns the value found under the given path, if any.
 func (s *Service) Get(path string) (interface{}, error) {
-	value, err := s.getFromInterface(path, s.jsonStructure)
+	value, err := s.getFromInterface(s.escapeKey(path), s.jsonStructure)
 	if err != nil {
 		return nil, microerror.MaskAny(err)
 	}
@@ -123,7 +135,7 @@ func (s *Service) OutputBytes() ([]byte, error) {
 func (s *Service) Set(path string, value interface{}) error {
 	var err error
 
-	s.jsonStructure, err = s.setFromInterface(path, value, s.jsonStructure)
+	s.jsonStructure, err = s.setFromInterface(s.escapeKey(path), value, s.jsonStructure)
 	if err != nil {
 		return microerror.MaskAny(err)
 	}
@@ -168,6 +180,8 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 				if err != nil {
 					return nil, microerror.MaskAny(err)
 				}
+
+				k := s.separatorExpression.ReplaceAllString(k, fmt.Sprintf(`\%s`, s.separator))
 
 				if ps != nil {
 					for _, p := range ps {
@@ -234,8 +248,13 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 	return nil, nil
 }
 
+func (s *Service) escapeKey(key string) string {
+	return s.escapedSeparatorExpression.ReplaceAllString(key, escapedSeparatorPlaceholder)
+}
+
 func (s *Service) getFromInterface(path string, jsonStructure interface{}) (interface{}, error) {
 	split := strings.Split(path, s.separator)
+	key := s.unescapeKey(split[0])
 
 	// process map
 	{
@@ -243,7 +262,7 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 		if err != nil {
 			// fall through
 		} else {
-			value, ok := stringMap[split[0]]
+			value, ok := stringMap[key]
 			if ok {
 				if len(split) == 1 {
 					return value, nil
@@ -269,13 +288,13 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 		if err != nil {
 			// fall through
 		} else {
-			index, err := indexFromKey(split[0])
+			index, err := indexFromKey(key)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", split[0])
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
@@ -319,6 +338,7 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 
 func (s *Service) setFromInterface(path string, value interface{}, jsonStructure interface{}) (interface{}, error) {
 	split := strings.Split(path, s.separator)
+	key := s.unescapeKey(split[0])
 
 	// process map
 	{
@@ -335,15 +355,15 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 					return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
 				}
 			} else {
-				_, ok := stringMap[split[0]]
+				_, ok := stringMap[key]
 				if ok {
 					recPath := strings.Join(split[1:], s.separator)
 
-					modified, err := s.setFromInterface(recPath, value, stringMap[split[0]])
+					modified, err := s.setFromInterface(recPath, value, stringMap[key])
 					if err != nil {
 						return nil, microerror.MaskAny(err)
 					}
-					stringMap[split[0]] = modified
+					stringMap[key] = modified
 
 					return stringMap, nil
 				} else {
@@ -359,13 +379,13 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 		if err != nil {
 			// fall through
 		} else {
-			index, err := indexFromKey(split[0])
+			index, err := indexFromKey(key)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", split[0])
+				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
@@ -419,6 +439,10 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 	}
 
 	return nil, nil
+}
+
+func (s *Service) unescapeKey(key string) string {
+	return placeholderExpression.ReplaceAllString(key, s.separator)
 }
 
 func containsString(list []string, item string) bool {

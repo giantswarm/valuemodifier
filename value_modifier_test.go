@@ -412,7 +412,56 @@ pass2: pass2
 `,
 		},
 
-		// Test case 11, ensure a real world example works.
+		// Test case 11, ensure a real world example works with all fields.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			SelectFields: []string{},
+			Input: `Installation:
+  V1:
+    Secret:
+      Alertmanager:
+        Nginx:
+          Auth: magic
+      Prometheus:
+        Nginx:
+          Auth: magic
+      Registry:
+        PullSecret:
+          DockerConfigJSON: |-
+            {
+              "auths": {
+                "quay.io": {
+                  "auth": "magic"
+                }
+              }
+            }
+`,
+			Expected: `Installation:
+  V1:
+    Secret:
+      Alertmanager:
+        Nginx:
+          Auth: magic-modified1
+      Prometheus:
+        Nginx:
+          Auth: magic-modified1
+      Registry:
+        PullSecret:
+          DockerConfigJSON: |-
+            {
+              "auths": {
+                "quay.io": {
+                  "auth": "magic-modified1"
+                }
+              }
+            }
+`,
+		},
+
+		// Test case 12, ensure a real world example works with selected fields.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
