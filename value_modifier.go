@@ -66,8 +66,6 @@ type Service struct {
 	selectFields []string
 }
 
-// TODO indentation as provided
-// TODO without indentation as provided
 func (s *Service) Traverse(input []byte) ([]byte, error) {
 	var err error
 

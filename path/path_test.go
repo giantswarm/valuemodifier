@@ -114,7 +114,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 7, ensure single paths with unnested inline JSON objects can be found.
+		// Test case 7, ensure single paths with unnested inline JSON objects can be
+		// found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`{
@@ -126,7 +127,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 8, ensure single paths with nested inline JSON objects can be found.
+		// Test case 8, ensure single paths with nested inline JSON objects can be
+		// found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`{
@@ -140,7 +142,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 9, ensure single paths with unnested inline JSON lists can be found.
+		// Test case 9, ensure single paths with unnested inline JSON lists can be
+		// found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`[
@@ -154,7 +157,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 10, ensure multiple paths with unnested inline JSON objects can be found.
+		// Test case 10, ensure multiple paths with unnested inline JSON objects can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`{
@@ -168,7 +172,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 11, ensure multiple paths with nested inline JSON objects can be found.
+		// Test case 11, ensure multiple paths with nested inline JSON objects can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`{
@@ -186,7 +191,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 12, ensure multiple paths with unnested inline JSON lists can be found.
+		// Test case 12, ensure multiple paths with unnested inline JSON lists can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`[
@@ -204,7 +210,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 13, ensure single paths with unnested inline YAML objects can be found.
+		// Test case 13, ensure single paths with unnested inline YAML objects can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": "k2: v2"
@@ -214,7 +221,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 14, ensure single paths with nested inline YAML objects can be found.
+		// Test case 14, ensure single paths with nested inline YAML objects can be
+		// found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`k2:
@@ -225,7 +233,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 15, ensure single paths with unnested inline YAML lists can be found.
+		// Test case 15, ensure single paths with unnested inline YAML lists can be
+		// found.
 		{
 			InputBytes: []byte(`{
   "k1": "- k2: v2"
@@ -235,7 +244,8 @@ func Test_Service_All(t *testing.T) {
 			},
 		},
 
-		// Test case 16, ensure multiple paths with unnested inline YAML objects can be found.
+		// Test case 16, ensure multiple paths with unnested inline YAML objects can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`k2: v2
@@ -247,7 +257,8 @@ k3: v3`) + `
 			},
 		},
 
-		// Test case 17, ensure multiple paths with nested inline YAML objects can be found.
+		// Test case 17, ensure multiple paths with nested inline YAML objects can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`k2:
@@ -261,7 +272,8 @@ k4:
 			},
 		},
 
-		// Test case 18, ensure multiple paths with unnested inline YAML lists can be found.
+		// Test case 18, ensure multiple paths with unnested inline YAML lists can
+		// be found.
 		{
 			InputBytes: []byte(`{
   "k1": ` + strconv.Quote(`- k2: v2
@@ -306,6 +318,7 @@ func Test_Service_Get(t *testing.T) {
 			Path:     "k1",
 			Expected: "v1",
 		},
+
 		// Test case 2, ensure the value of a nested path can be returned.
 		{
 			InputBytes: []byte(`{
@@ -318,6 +331,7 @@ func Test_Service_Get(t *testing.T) {
 			Path:     "k1.k2.k3",
 			Expected: "v3",
 		},
+
 		// Test case 3, ensure the value of a list path can be returned.
 		{
 			InputBytes: []byte(`{
@@ -326,6 +340,159 @@ func Test_Service_Get(t *testing.T) {
       "k2": "v2"
     }
   ]
+}`),
+			Path:     "k1.[0].k2",
+			Expected: "v2",
+		},
+
+		// Test case 4, ensure the value of single paths with unnested inline JSON
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": "v2"
+  }`) + `
+}`),
+			Path:     "k1.k2",
+			Expected: "v2",
+		},
+
+		// Test case 5, ensure the value of single paths with nested inline JSON
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": {
+      "k3": "v3"
+    }
+  }`) + `
+}`),
+			Path:     "k1.k2.k3",
+			Expected: "v3",
+		},
+
+		// Test case 6, ensure the value of single paths with unnested inline JSON
+		// lists can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`[
+    {
+      "k2": "v2"
+    }
+  ]`) + `
+}`),
+			Path:     "k1.[0].k2",
+			Expected: "v2",
+		},
+
+		// Test case 7, ensure the value of multiple paths with unnested inline JSON
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": "v2",
+    "k3": "v3"
+  }`) + `
+}`),
+			Path:     "k1.k2",
+			Expected: "v2",
+		},
+
+		// Test case 8, ensure the value of multiple paths with nested inline JSON
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": {
+      "k3": "v3"
+    },
+    "k4": {
+      "k5": "v5"
+    }
+  }`) + `
+}`),
+			Path:     "k1.k2.k3",
+			Expected: "v3",
+		},
+
+		// Test case 9, ensure the value of multiple paths with unnested inline JSON
+		// lists can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`[
+    {
+      "k2": "v2"
+    },
+    {
+      "k3": "v3"
+    }
+  ]`) + `
+}`),
+			Path:     "k1.[0].k2",
+			Expected: "v2",
+		},
+
+		// Test case 10, ensure the value of single paths with unnested inline YAML
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": "k2: v2"
+}`),
+			Path:     "k1.k2",
+			Expected: "v2",
+		},
+
+		// Test case 11, ensure the value of single paths with nested inline YAML
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: v3`) + `
+}`),
+			Path:     "k1.k2.k3",
+			Expected: "v3",
+		},
+
+		// Test case 12, ensure the value of single paths with unnested inline YAML
+		// lists can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": "- k2: v2"
+}`),
+			Path:     "k1.[0].k2",
+			Expected: "v2",
+		},
+
+		// Test case 13, ensure the value of multiple paths with unnested inline
+		// YAML objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2: v2
+k3: v3`) + `
+}`),
+			Path:     "k1.k2",
+			Expected: "v2",
+		},
+
+		// Test case 14, ensure the value of multiple paths with nested inline YAML
+		// objects can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: v3
+k4:
+  k5: v5`) + `
+}`),
+			Path:     "k1.k2.k3",
+			Expected: "v3",
+		},
+
+		// Test case 15, ensure the value of multiple paths with unnested inline
+		// YAML lists can be returned.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`- k2: v2
+- k3: v3`) + `
 }`),
 			Path:     "k1.[0].k2",
 			Expected: "v2",
@@ -568,6 +735,234 @@ func Test_Service_Set(t *testing.T) {
       }
     ]
   ]
+}`),
+		},
+
+		// Test case 9, ensure the value of single paths with unnested inline JSON
+		// objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": "v2"
+  }`) + `
+}`),
+			Path:  "k1.k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`{
+  "k2": "modified"
+}`) + `
+}`),
+		},
+
+		// Test case 10, ensure the value of single paths with nested inline JSON
+		// objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": {
+      "k3": "v3"
+    }
+  }`) + `
+}`),
+			Path:  "k1.k2.k3",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`{
+  "k2": {
+    "k3": "modified"
+  }
+}`) + `
+}`),
+		},
+
+		// Test case 11, ensure the value of single paths with unnested inline JSON
+		// lists can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`[
+    {
+      "k2": "v2"
+    }
+  ]`) + `
+}`),
+			Path:  "k1.[0].k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`[
+  {
+    "k2": "modified"
+  }
+]`) + `
+}`),
+		},
+
+		// Test case 12, ensure the value of multiple paths with unnested inline
+		// JSON objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": "v2",
+    "k3": "v3"
+  }`) + `
+}`),
+			Path:  "k1.k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`{
+  "k2": "modified",
+  "k3": "v3"
+}`) + `
+}`),
+		},
+
+		// Test case 13, ensure the value of multiple paths with nested inline JSON
+		// objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": {
+      "k3": "v3"
+    },
+    "k4": {
+      "k5": "v5"
+    }
+  }`) + `
+}`),
+			Path:  "k1.k2.k3",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`{
+  "k2": {
+    "k3": "modified"
+  },
+  "k4": {
+    "k5": "v5"
+  }
+}`) + `
+}`),
+		},
+
+		// Test case 14, ensure the value of multiple paths with unnested inline
+		// JSON lists can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`[
+    {
+      "k2": "v2"
+    },
+    {
+      "k3": "v3"
+    }
+  ]`) + `
+}`),
+			Path:  "k1.[0].k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`[
+  {
+    "k2": "modified"
+  },
+  {
+    "k3": "v3"
+  }
+]`) + `
+}`),
+		},
+
+		// Test case 15, ensure the value of single paths with unnested inline YAML
+		// objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": "k2: v2"
+}`),
+			Path:  "k1.k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`k2: modified
+`) + `
+}`),
+		},
+
+		// Test case 16, ensure the value of single paths with nested inline YAML
+		// objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: v3`) + `
+}`),
+			Path:  "k1.k2.k3",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: modified
+`) + `
+}`),
+		},
+
+		// Test case 17, ensure the value of single paths with unnested inline YAML
+		// lists can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": "- k2: v2"
+}`),
+			Path:  "k1.[0].k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`- k2: modified
+`) + `
+}`),
+		},
+
+		// Test case 18, ensure the value of multiple paths with unnested inline
+		// YAML objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2: v2
+k3: v3`) + `
+}`),
+			Path:  "k1.k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`k2: modified
+k3: v3
+`) + `
+}`),
+		},
+
+		// Test case 19, ensure the value of multiple paths with nested inline YAML
+		// objects can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: v3
+k4:
+  k5: v5`) + `
+}`),
+			Path:  "k1.k2.k3",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: modified
+k4:
+  k5: v5
+`) + `
+}`),
+		},
+
+		// Test case 20, ensure the value of multiple paths with unnested inline
+		// YAML lists can be modified.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`- k2: v2
+- k3: v3`) + `
+}`),
+			Path:  "k1.[0].k2",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": ` + strconv.Quote(`- k2: modified
+- k3: v3
+`) + `
 }`),
 		},
 	}

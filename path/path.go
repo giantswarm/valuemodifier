@@ -239,14 +239,14 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 }
 
 func (s *Service) getFromInterface(path string, jsonStructure interface{}) (interface{}, error) {
+	split := strings.Split(path, s.separator)
+
 	// process map
 	{
 		stringMap, err := cast.ToStringMapE(jsonStructure)
 		if err != nil {
 			// fall through
 		} else {
-			split := strings.Split(path, s.separator)
-
 			value, ok := stringMap[split[0]]
 			if ok {
 				if len(split) == 1 {
@@ -254,12 +254,12 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 				} else {
 					recPath := strings.Join(split[1:], s.separator)
 
-					value, err := s.getFromInterface(recPath, value)
+					v, err := s.getFromInterface(recPath, value)
 					if err != nil {
 						return nil, microerror.MaskAny(err)
 					}
 
-					return value, nil
+					return v, nil
 				}
 			} else {
 				return nil, microerror.MaskAnyf(notFoundError, "key '%s' not found in path", path)
@@ -273,8 +273,6 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 		if err != nil {
 			// fall through
 		} else {
-			split := strings.Split(path, s.separator)
-
 			index, err := indexFromKey(split[0])
 			if err != nil {
 				return nil, microerror.MaskAny(err)
@@ -285,12 +283,38 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
-			value, err := s.getFromInterface(recPath, slice[index])
+			v, err := s.getFromInterface(recPath, slice[index])
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
 
-			return value, nil
+			return v, nil
+		}
+	}
+
+	// process string
+	{
+		str, err := cast.ToStringE(jsonStructure)
+		if err != nil {
+			// fall through
+		} else {
+			jsonBytes, _, err := toJSON([]byte(str))
+			if err != nil {
+				// fall through
+			} else {
+				var jsonStructure interface{}
+				err := json.Unmarshal(jsonBytes, &jsonStructure)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				v, err := s.getFromInterface(path, jsonStructure)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				return v, nil
+			}
 		}
 	}
 
@@ -298,14 +322,14 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 }
 
 func (s *Service) setFromInterface(path string, value interface{}, jsonStructure interface{}) (interface{}, error) {
+	split := strings.Split(path, s.separator)
+
 	// process map
 	{
 		stringMap, err := cast.ToStringMapE(jsonStructure)
 		if err != nil {
 			// fall through
 		} else {
-			split := strings.Split(path, s.separator)
-
 			if len(split) == 1 {
 				_, ok := stringMap[path]
 				if ok {
@@ -339,8 +363,6 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 		if err != nil {
 			// fall through
 		} else {
-			split := strings.Split(path, s.separator)
-
 			index, err := indexFromKey(split[0])
 			if err != nil {
 				return nil, microerror.MaskAny(err)
@@ -358,6 +380,45 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 			slice[index] = modified
 
 			return slice, nil
+		}
+	}
+
+	// process string
+	{
+		str, err := cast.ToStringE(jsonStructure)
+		if err != nil {
+			// fall through
+		} else {
+			jsonBytes, isJSON, err := toJSON([]byte(str))
+			if err != nil {
+				// fall through
+			} else {
+				var jsonStructure interface{}
+				err := json.Unmarshal(jsonBytes, &jsonStructure)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				modified, err := s.setFromInterface(path, value, jsonStructure)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				var b []byte
+				if !isJSON {
+					b, err = yamltojson.Marshal(modified)
+					if err != nil {
+						return nil, microerror.MaskAny(err)
+					}
+				} else {
+					b, err = json.MarshalIndent(modified, "", "  ")
+					if err != nil {
+						return nil, microerror.MaskAny(err)
+					}
+				}
+
+				return string(b), nil
+			}
 		}
 	}
 

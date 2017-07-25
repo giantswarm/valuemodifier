@@ -351,7 +351,7 @@ pass6: 123456-modified1-modified2
     baz: pass2
   foo: pass3
 `,
-			Expected: `pass1: |-
+			Expected: `pass1: |
   bar:
     baz: pass2-modified1
   foo: pass3-modified1
@@ -366,23 +366,23 @@ pass6: 123456-modified1-modified2
 			IgnoreFields: []string{},
 			SelectFields: []string{},
 			Input: `pass1: |
-   {
-     "block1": {
-       "block11": {
-         "pass2": "pass2"
-       }
-     }
-   }
- `,
+  {
+    "block1": {
+      "block11": {
+        "pass2": "pass2"
+      }
+    }
+  }
+`,
 			Expected: `pass1: |-
-   {
-     "block1": {
-       "block11": {
-         "pass2": "pass2-modified1"
-       }
-     }
-   }
- `,
+  {
+    "block1": {
+      "block11": {
+        "pass2": "pass2-modified1"
+      }
+    }
+  }
+`,
 		},
 		// Test case 10, a single modifier modifies all secrets, but ignores the
 		// ones configured using IgnoreFields.
@@ -396,19 +396,19 @@ pass6: 123456-modified1-modified2
 				"pass1",
 			},
 			Input: `block1:
-   block11:
-     pass1: pass1
-   pass2: pass2
- pass1: pass1
- pass2: pass2
- `,
+  block11:
+    pass1: pass1
+  pass2: pass2
+pass1: pass1
+pass2: pass2
+`,
 			Expected: `block1:
-   block11:
-     pass1: pass1-modified1
-   pass2: pass2
- pass1: pass1-modified1
- pass2: pass2
- `,
+  block11:
+    pass1: pass1-modified1
+  pass2: pass2
+pass1: pass1-modified1
+pass2: pass2
+`,
 		},
 	}
 
