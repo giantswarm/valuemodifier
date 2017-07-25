@@ -69,6 +69,8 @@ type Service struct {
 // TODO indentation as provided
 // TODO without indentation as provided
 func (s *Service) Traverse(input []byte) ([]byte, error) {
+	var err error
+
 	var pathService *path.Service
 	{
 		pathConfig := path.DefaultConfig()
@@ -135,7 +137,12 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 		}
 	}
 
-	return pathService.OutputBytes(), nil
+	b, err := pathService.OutputBytes()
+	if err != nil {
+		return nil, microerror.MaskAny(err)
+	}
+
+	return b, nil
 }
 
 func containsString(list []string, item string) bool {
