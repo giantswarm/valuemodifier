@@ -1,13 +1,11 @@
 package valuemodifier
 
 import (
-	"encoding/json"
 	"sort"
 
-	"github.com/Jeffail/gabs"
-	yamltojson "github.com/ghodss/yaml"
 	microerror "github.com/giantswarm/microkit/error"
-	yaml "gopkg.in/yaml.v2"
+	"github.com/giantswarm/valuemodifier/path"
+	"github.com/spf13/cast"
 )
 
 // Config represents the configuration used to create a new value modifier
@@ -71,21 +69,22 @@ type Service struct {
 // TODO indentation as provided
 // TODO without indentation as provided
 func (s *Service) Traverse(input []byte) ([]byte, error) {
-	jsonBytes, _, _, err := toJSON(input)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
-	}
-
-	container, err := gabs.ParseJSON(jsonBytes)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
+	var pathService *path.Service
+	{
+		pathConfig := path.DefaultConfig()
+		pathConfig.InputBytes = input
+		pathService, err = path.New(pathConfig)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 	}
 
 	{
 		var fields []string
 		fields = append(fields, s.ignoreFields...)
 		fields = append(fields, s.selectFields...)
-		err := validateFields(jsonBytes, fields)
+
+		err := pathService.Validate(fields)
 		if err != nil {
 			return nil, microerror.MaskAny(err)
 		}
@@ -93,7 +92,7 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 
 	var paths []string
 	{
-		paths, err = containerPaths(container)
+		paths, err = pathService.All()
 		if err != nil {
 			return nil, microerror.MaskAny(err)
 		}
@@ -117,22 +116,26 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 	}
 
 	for _, p := range paths {
+		v, err := pathService.Get(p)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 
-		// TODO get value by path
-
-		v := []byte(str)
+		b := []byte(cast.ToString(v))
 		for _, m := range s.valueModifiers {
-			v, err = m.Modify(v)
+			b, err = m.Modify(b)
 			if err != nil {
 				return nil, microerror.MaskAny(err)
 			}
 		}
-		str = string(v)
 
-		// TODO set value by path
+		err = pathService.Set(p, string(b))
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 	}
 
-	return []byte(container.StringIndent("", "  ")), nil
+	return pathService.OutputBytes(), nil
 }
 
 func containsString(list []string, item string) bool {
@@ -143,68 +146,4 @@ func containsString(list []string, item string) bool {
 	}
 
 	return false
-}
-
-func isJSON(b []byte) bool {
-	var m map[string]interface{}
-	return json.Unmarshal(b, &m) == nil
-}
-
-func isYAML(b []byte) bool {
-	var m map[interface{}]interface{}
-	return yaml.Unmarshal(b, &m) == nil
-}
-
-func toJSON(b []byte) ([]byte, map[string]interface{}, bool, error) {
-	if isJSON(b) {
-		var m map[string]interface{}
-		err := json.Unmarshal(b, &m)
-		if err != nil {
-			return nil, nil, false, microerror.MaskAny(err)
-		}
-
-		return b, m, true, nil
-	}
-
-	var jsonMap map[string]interface{}
-	var jsonBytes []byte
-	{
-		var m map[interface{}]interface{}
-		err := yaml.Unmarshal(b, &m)
-		if err != nil {
-			return nil, nil, false, microerror.MaskAny(err)
-		}
-
-		yamlBytes, err := yaml.Marshal(m)
-		if err != nil {
-			return nil, nil, false, microerror.MaskAny(err)
-		}
-
-		jsonBytes, err = yamltojson.YAMLToJSON(yamlBytes)
-		if err != nil {
-			return nil, nil, false, microerror.MaskAny(err)
-		}
-		err = json.Unmarshal(b, &jsonMap)
-		if err != nil {
-			return nil, nil, false, microerror.MaskAny(err)
-		}
-	}
-
-	return jsonBytes, jsonMap, false, nil
-}
-
-func validateFields(jsonBytes []byte, fields []string) error {
-	gabsJSON, err := gabs.ParseJSON(jsonBytes)
-	if err != nil {
-		return microerror.MaskAny(err)
-	}
-
-	for _, f := range fields {
-		exists := gabsJSON.ExistsP(f)
-		if !exists {
-			return microerror.MaskAnyf(fieldNotFoundError, f)
-		}
-	}
-
-	return nil
 }

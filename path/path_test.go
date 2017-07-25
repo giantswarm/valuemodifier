@@ -2,26 +2,28 @@ package path
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 )
 
 func Test_Service_All(t *testing.T) {
 	testCases := []struct {
-		JSONBytes []byte
-		Expected  []string
+		InputBytes []byte
+		Expected   []string
 	}{
 		// Test case 1, ensure a single unnested path can be found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": "v1"
 }`),
 			Expected: []string{
 				"k1",
 			},
 		},
+
 		// Test case 2, ensure multiple unnested paths can be found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": "v1",
   "k2": "v2",
   "k3": "v3"
@@ -32,9 +34,10 @@ func Test_Service_All(t *testing.T) {
 				"k3",
 			},
 		},
+
 		// Test case 3, ensure a single nested path can be found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": {
     "k2": {
       "k3": "v3"
@@ -45,9 +48,10 @@ func Test_Service_All(t *testing.T) {
 				"k1.k2.k3",
 			},
 		},
+
 		// Test case 4, ensure multiple nested paths can be found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": {
     "k2": {
       "k3": "v3"
@@ -64,10 +68,11 @@ func Test_Service_All(t *testing.T) {
 				"k11.k22.k33",
 			},
 		},
+
 		// Test case 5, multiple unnested paths and multiple nested paths can be
 		// found at the same time.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": "v1",
   "k2": "v2",
   "k3": "v3",
@@ -90,9 +95,10 @@ func Test_Service_All(t *testing.T) {
 				"k7.k8.k9",
 			},
 		},
+
 		// Test case 6, ensure paths across lists can be found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -107,11 +113,170 @@ func Test_Service_All(t *testing.T) {
 				"k1.[1].k3",
 			},
 		},
+
+		// Test case 7, ensure single paths with unnested inline JSON objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": "v2"
+  }`) + `
+}`),
+			Expected: []string{
+				"k1.k2",
+			},
+		},
+
+		// Test case 8, ensure single paths with nested inline JSON objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": {
+      "k3": "v3"
+    }
+  }`) + `
+}`),
+			Expected: []string{
+				"k1.k2.k3",
+			},
+		},
+
+		// Test case 9, ensure single paths with unnested inline JSON lists can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`[
+    {
+      "k2": "v2"
+    }
+  ]`) + `
+}`),
+			Expected: []string{
+				"k1.[0].k2",
+			},
+		},
+
+		// Test case 10, ensure multiple paths with unnested inline JSON objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": "v2",
+    "k3": "v3"
+  }`) + `
+}`),
+			Expected: []string{
+				"k1.k2",
+				"k1.k3",
+			},
+		},
+
+		// Test case 11, ensure multiple paths with nested inline JSON objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`{
+    "k2": {
+      "k3": "v3"
+    },
+    "k4": {
+      "k5": "v5"
+    }
+  }`) + `
+}`),
+			Expected: []string{
+				"k1.k2.k3",
+				"k1.k4.k5",
+			},
+		},
+
+		// Test case 12, ensure multiple paths with unnested inline JSON lists can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`[
+    {
+      "k2": "v2"
+    },
+    {
+      "k3": "v3"
+    }
+  ]`) + `
+}`),
+			Expected: []string{
+				"k1.[0].k2",
+				"k1.[1].k3",
+			},
+		},
+
+		// Test case 13, ensure single paths with unnested inline YAML objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": "k2: v2"
+}`),
+			Expected: []string{
+				"k1.k2",
+			},
+		},
+
+		// Test case 14, ensure single paths with nested inline YAML objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: v3`) + `
+}`),
+			Expected: []string{
+				"k1.k2.k3",
+			},
+		},
+
+		// Test case 15, ensure single paths with unnested inline YAML lists can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": "- k2: v2"
+}`),
+			Expected: []string{
+				"k1.[0].k2",
+			},
+		},
+
+		// Test case 16, ensure multiple paths with unnested inline YAML objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2: v2
+k3: v3`) + `
+}`),
+			Expected: []string{
+				"k1.k2",
+				"k1.k3",
+			},
+		},
+
+		// Test case 17, ensure multiple paths with nested inline YAML objects can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`k2:
+  k3: v3
+k4:
+  k5: v5`) + `
+}`),
+			Expected: []string{
+				"k1.k2.k3",
+				"k1.k4.k5",
+			},
+		},
+
+		// Test case 18, ensure multiple paths with unnested inline YAML lists can be found.
+		{
+			InputBytes: []byte(`{
+  "k1": ` + strconv.Quote(`- k2: v2
+- k3: v3`) + `
+}`),
+			Expected: []string{
+				"k1.[0].k2",
+				"k1.[1].k3",
+			},
+		},
 	}
 
 	for i, testCase := range testCases {
 		config := DefaultConfig()
-		config.JSONBytes = testCase.JSONBytes
+		config.InputBytes = testCase.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
@@ -129,13 +294,13 @@ func Test_Service_All(t *testing.T) {
 
 func Test_Service_Get(t *testing.T) {
 	testCases := []struct {
-		JSONBytes []byte
-		Path      string
-		Expected  interface{}
+		InputBytes []byte
+		Path       string
+		Expected   interface{}
 	}{
 		// Test case 1, ensure the value of an unnested path can be returned.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": "v1"
 }`),
 			Path:     "k1",
@@ -143,7 +308,7 @@ func Test_Service_Get(t *testing.T) {
 		},
 		// Test case 2, ensure the value of a nested path can be returned.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": {
     "k2": {
       "k3": "v3"
@@ -155,7 +320,7 @@ func Test_Service_Get(t *testing.T) {
 		},
 		// Test case 3, ensure the value of a list path can be returned.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -169,7 +334,7 @@ func Test_Service_Get(t *testing.T) {
 
 	for i, testCase := range testCases {
 		config := DefaultConfig()
-		config.JSONBytes = testCase.JSONBytes
+		config.InputBytes = testCase.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
@@ -187,14 +352,14 @@ func Test_Service_Get(t *testing.T) {
 
 func Test_Service_Get_Error(t *testing.T) {
 	textCases := []struct {
-		JSONBytes    []byte
+		InputBytes   []byte
 		Path         string
 		ErrorMatcher func(error) bool
 	}{
 		// Test 1, when there is only 1 element in the list index [1] cannot be
 		// found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -208,7 +373,7 @@ func Test_Service_Get_Error(t *testing.T) {
 		// Test 2, when there is k1 at the beginning of the path key k3 cannot be
 		// found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -222,7 +387,7 @@ func Test_Service_Get_Error(t *testing.T) {
 		// Test 3, when there is k2 at the end of the path key k3 cannot be
 		// found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -236,7 +401,7 @@ func Test_Service_Get_Error(t *testing.T) {
 
 	for i, tc := range textCases {
 		config := DefaultConfig()
-		config.JSONBytes = tc.JSONBytes
+		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
@@ -251,14 +416,14 @@ func Test_Service_Get_Error(t *testing.T) {
 
 func Test_Service_Set(t *testing.T) {
 	textCases := []struct {
-		JSONBytes []byte
-		Path      string
-		Value     string
-		Expected  []byte
+		InputBytes []byte
+		Path       string
+		Value      string
+		Expected   []byte
 	}{
 		// Test 1,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": "v1"
 }`),
 			Path:  "k1",
@@ -270,7 +435,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 2,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": "v1",
   "k2": "v2"
 }`),
@@ -284,7 +449,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 3,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": {
     "k2": "v2"
   }
@@ -300,7 +465,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 4,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": {
     "k2": "v2"
   },
@@ -318,7 +483,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 5,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": {
     "k2": {
       "k3": "v3"
@@ -338,7 +503,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 6,
 		{
-			JSONBytes: []byte(`[
+			InputBytes: []byte(`[
   {
     "k1": "v1"
   }
@@ -354,7 +519,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 7,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -374,7 +539,7 @@ func Test_Service_Set(t *testing.T) {
 
 		// Test 8,
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     [
       {
@@ -409,7 +574,7 @@ func Test_Service_Set(t *testing.T) {
 
 	for i, tc := range textCases {
 		config := DefaultConfig()
-		config.JSONBytes = tc.JSONBytes
+		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
@@ -420,7 +585,10 @@ func Test_Service_Set(t *testing.T) {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		output := newService.JSONBytes()
+		output, err := newService.OutputBytes()
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
 		if !reflect.DeepEqual(tc.Expected, output) {
 			t.Fatal("test", i+1, "expected", string(tc.Expected), "got", string(output))
 		}
@@ -429,14 +597,14 @@ func Test_Service_Set(t *testing.T) {
 
 func Test_Service_Set_Error(t *testing.T) {
 	textCases := []struct {
-		JSONBytes    []byte
+		InputBytes   []byte
 		Path         string
 		ErrorMatcher func(error) bool
 	}{
 		// Test 1, when there is only 1 element in the list index [1] cannot be
 		// found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -450,7 +618,7 @@ func Test_Service_Set_Error(t *testing.T) {
 		// Test 2, when there is k1 at the beginning of the path key k3 cannot be
 		// found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -464,7 +632,7 @@ func Test_Service_Set_Error(t *testing.T) {
 		// Test 3, when there is k2 at the end of the path key k3 cannot be
 		// found.
 		{
-			JSONBytes: []byte(`{
+			InputBytes: []byte(`{
   "k1": [
     {
       "k2": "v2"
@@ -478,7 +646,7 @@ func Test_Service_Set_Error(t *testing.T) {
 
 	for i, tc := range textCases {
 		config := DefaultConfig()
-		config.JSONBytes = tc.JSONBytes
+		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)

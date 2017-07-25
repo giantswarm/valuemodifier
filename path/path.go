@@ -1,6 +1,7 @@
 package path
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -8,6 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	yaml "gopkg.in/yaml.v1"
+
+	yamltojson "github.com/ghodss/yaml"
 	microerror "github.com/giantswarm/microkit/error"
 	"github.com/spf13/cast"
 )
@@ -15,8 +19,8 @@ import (
 // Config represents the configuration used to create a new path service.
 type Config struct {
 	// Settings.
-	JSONBytes []byte
-	Separator string
+	InputBytes []byte
+	Separator  string
 }
 
 // DefaultConfig provides a default configuration to create a new path service
@@ -24,24 +28,33 @@ type Config struct {
 func DefaultConfig() Config {
 	return Config{
 		// Settings.
-		JSONBytes: nil,
-		Separator: ".",
+		InputBytes: nil,
+		Separator:  ".",
 	}
 }
 
 // New creates a new configured path service.
 func New(config Config) (*Service, error) {
 	// Settings.
-	if config.JSONBytes == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.JSONBytes must not be empty")
+	if config.InputBytes == nil {
+		return nil, microerror.MaskAnyf(invalidConfigError, "config.InputBytes must not be empty")
 	}
 	if config.Separator == "" {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.Separator must not be empty")
 	}
 
+	var err error
+
+	var isJSON bool
+	var jsonBytes []byte
 	var jsonStructure interface{}
 	{
-		err := json.Unmarshal(config.JSONBytes, &jsonStructure)
+		jsonBytes, isJSON, err = toJSON(config.InputBytes)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+
+		err := json.Unmarshal(jsonBytes, &jsonStructure)
 		if err != nil {
 			return nil, microerror.MaskAny(err)
 		}
@@ -49,10 +62,11 @@ func New(config Config) (*Service, error) {
 
 	newService := &Service{
 		// Internals.
+		isJSON:        isJSON,
+		jsonBytes:     jsonBytes,
 		jsonStructure: jsonStructure,
 
 		// Settings.
-		jsonBytes: config.JSONBytes,
 		separator: config.Separator,
 	}
 
@@ -62,10 +76,11 @@ func New(config Config) (*Service, error) {
 // Service implements the path service.
 type Service struct {
 	// Internals.
+	isJSON        bool
+	jsonBytes     []byte
 	jsonStructure interface{}
 
 	// Settings.
-	jsonBytes []byte
 	separator string
 }
 
@@ -103,8 +118,17 @@ func (s *Service) Get(path string) (interface{}, error) {
 	return value, nil
 }
 
-func (s *Service) JSONBytes() []byte {
-	return s.jsonBytes
+func (s *Service) OutputBytes() ([]byte, error) {
+	b := s.jsonBytes
+	if !s.isJSON {
+		var err error
+		b, err = yamltojson.JSONToYAML(b)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+	}
+
+	return b, nil
 }
 
 // Set changes the value of the given path.
@@ -125,15 +149,32 @@ func (s *Service) Set(path string, value interface{}) error {
 	return nil
 }
 
-func (s *Service) allFromInterface(value interface{}) ([]string, error) {
-	var paths []string
+func (s *Service) Validate(paths []string) error {
+	all, err := s.All()
+	if err != nil {
+		return microerror.MaskAny(err)
+	}
 
+	for _, p := range paths {
+		if containsString(all, p) {
+			continue
+		}
+
+		return microerror.MaskAnyf(notFoundError, "path '%s' not found", p)
+	}
+
+	return nil
+}
+
+func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 	// process map
 	{
 		stringMap, err := cast.ToStringMapE(value)
 		if err != nil {
 			// fall through
 		} else {
+			var paths []string
+
 			for k, v := range stringMap {
 				ps, err := s.allFromInterface(v)
 				if err != nil {
@@ -141,15 +182,19 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 				}
 				paths = append(paths, pathWithKey(k, ps, s.separator))
 			}
+
+			return paths, nil
 		}
 	}
 
 	// process slice
-	if len(paths) == 0 {
+	{
 		slice, err := cast.ToSliceE(value)
 		if err != nil {
 			// fall through
 		} else {
+			var paths []string
+
 			for i, v := range slice {
 				ps, err := s.allFromInterface(v)
 				if err != nil {
@@ -159,10 +204,38 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 					paths = append(paths, pathWithKey(fmt.Sprintf("[%d]", i), ps, s.separator))
 				}
 			}
+
+			return paths, nil
 		}
 	}
 
-	return paths, nil
+	// process string
+	{
+		str, err := cast.ToStringE(value)
+		if err != nil {
+			// fall through
+		} else {
+			jsonBytes, _, err := toJSON([]byte(str))
+			if err != nil {
+				// fall through
+			} else {
+				var jsonStructure interface{}
+				err := json.Unmarshal(jsonBytes, &jsonStructure)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				ps, err := s.allFromInterface(jsonStructure)
+				if err != nil {
+					return nil, microerror.MaskAny(err)
+				}
+
+				return ps, nil
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 func (s *Service) getFromInterface(path string, jsonStructure interface{}) (interface{}, error) {
@@ -291,6 +364,16 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 	return nil, nil
 }
 
+func containsString(list []string, item string) bool {
+	for _, l := range list {
+		if l == item {
+			return true
+		}
+	}
+
+	return false
+}
+
 func indexFromKey(key string) (int, error) {
 	re := regexp.MustCompile("\\[[0-9]\\]")
 	ok := re.MatchString(key)
@@ -307,6 +390,68 @@ func indexFromKey(key string) (int, error) {
 	return i, nil
 }
 
+func isJSON(b []byte) bool {
+	var l []interface{}
+	isList := json.Unmarshal(b, &l) == nil
+
+	var m map[string]interface{}
+	isObject := json.Unmarshal(b, &m) == nil
+
+	return isObject || isList
+}
+
+func isYAMLList(b []byte) bool {
+	var l []interface{}
+	return yaml.Unmarshal(b, &l) == nil && bytes.HasPrefix(b, []byte("-"))
+}
+
+func isYAMLObject(b []byte) bool {
+	var m map[interface{}]interface{}
+	return yaml.Unmarshal(b, &m) == nil && !bytes.HasPrefix(b, []byte("-"))
+}
+
 func pathWithKey(key string, paths []string, separator string) string {
 	return strings.Join(append([]string{key}, paths...), separator)
+}
+
+func toJSON(b []byte) ([]byte, bool, error) {
+	if isJSON(b) {
+		return b, true, nil
+	}
+
+	isYAMLList := isYAMLList(b)
+	isYAMLObject := isYAMLObject(b)
+
+	var jsonBytes []byte
+	if isYAMLList && !isYAMLObject {
+		var jsonList []interface{}
+		err := yamltojson.Unmarshal(b, &jsonList)
+		if err != nil {
+			return nil, false, microerror.MaskAny(err)
+		}
+
+		jsonBytes, err = json.Marshal(jsonList)
+		if err != nil {
+			return nil, false, microerror.MaskAny(err)
+		}
+
+		return jsonBytes, false, nil
+	}
+
+	if !isYAMLList && isYAMLObject {
+		var jsonMap map[string]interface{}
+		err := yamltojson.Unmarshal(b, &jsonMap)
+		if err != nil {
+			return nil, false, microerror.MaskAny(err)
+		}
+
+		jsonBytes, err = json.Marshal(jsonMap)
+		if err != nil {
+			return nil, false, microerror.MaskAny(err)
+		}
+
+		return jsonBytes, false, nil
+	}
+
+	return nil, false, microerror.MaskAny(invalidFormatError)
 }
