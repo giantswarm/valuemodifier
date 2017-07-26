@@ -1,11 +1,11 @@
 package valuemodifier
 
 import (
-	"encoding/json"
+	"sort"
 
 	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/valuemodifier/path"
 	"github.com/spf13/cast"
-	yaml "gopkg.in/yaml.v1"
 )
 
 // Config represents the configuration used to create a new value modifier
@@ -16,10 +16,11 @@ type Config struct {
 
 	// Settings.
 	IgnoreFields []string
+	SelectFields []string
 }
 
-// DefaultConfig provides a default configuration to create a new GPG decryption
-// decoding value modifier by best effort.
+// DefaultConfig provides a default configuration to create a new value modifier
+// traverser by best effort.
 func DefaultConfig() Config {
 	return Config{
 		// Dependencies.
@@ -27,14 +28,20 @@ func DefaultConfig() Config {
 
 		// Settings.
 		IgnoreFields: nil,
+		SelectFields: nil,
 	}
 }
 
-// New creates a new configured GPG decryption value modifier.
+// New creates a new configured value modifier traverser.
 func New(config Config) (*Service, error) {
 	// Dependencies.
 	if len(config.ValueModifiers) == 0 {
 		return nil, microerror.MaskAnyf(invalidConfigError, "config.ValueModifiers must not be empty")
+	}
+
+	// Settings.
+	if len(config.IgnoreFields) != 0 && len(config.SelectFields) != 0 {
+		return nil, microerror.MaskAnyf(invalidConfigError, "config.IgnoreFields must be empty when config.SelectFields provided")
 	}
 
 	newService := &Service{
@@ -43,6 +50,7 @@ func New(config Config) (*Service, error) {
 
 		// Settings.
 		ignoreFields: config.IgnoreFields,
+		selectFields: config.SelectFields,
 	}
 
 	return newService, nil
@@ -55,146 +63,92 @@ type Service struct {
 
 	// Settings.
 	ignoreFields []string
+	selectFields []string
 }
 
-func (s *Service) TraverseJSON(input []byte) ([]byte, error) {
-	var m map[string]interface{}
-	err := json.Unmarshal(input, &m)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
+func (s *Service) Traverse(input []byte) ([]byte, error) {
+	var err error
+
+	var pathService *path.Service
+	{
+		pathConfig := path.DefaultConfig()
+		pathConfig.InputBytes = input
+		pathService, err = path.New(pathConfig)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 	}
 
-	for k, v := range m {
-		m[k] = toModifiedValueJSON(k, v, s.ignoreFields, s.valueModifiers...)
-	}
-	b, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		return nil, microerror.MaskAny(err)
-	}
+	{
+		var fields []string
+		fields = append(fields, s.ignoreFields...)
+		fields = append(fields, s.selectFields...)
 
-	return b, nil
-}
-
-func (s *Service) TraverseYAML(input []byte) ([]byte, error) {
-	var m map[interface{}]interface{}
-	err := yaml.Unmarshal(input, &m)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
+		err := pathService.Validate(fields)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
 	}
 
-	for k, v := range m {
-		m[k] = toModifiedValueYAML(k, v, s.ignoreFields, s.valueModifiers...)
-	}
-	b, err := yaml.Marshal(m)
-	if err != nil {
-		return nil, microerror.MaskAny(err)
-	}
-
-	return b, nil
-}
-
-func toModifiedValueJSON(key string, val interface{}, ignoreFields []string, valueModifiers ...ValueModifier) interface{} {
-	m1, ok := val.(map[string]interface{})
-	if ok {
-		for k, v := range m1 {
-			m1[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
+	var paths []string
+	{
+		paths, err = pathService.All()
+		if err != nil {
+			return nil, microerror.MaskAny(err)
 		}
 
-		return m1
-	}
+		if len(s.ignoreFields) != 0 {
+			var newPaths []string
 
-	m2, ok := val.([]interface{})
-	if ok {
-		for i, v := range m2 {
-			m2[i] = toModifiedValueJSON("", v, ignoreFields, valueModifiers...)
-		}
-
-		return m2
-	}
-
-	s := cast.ToString(val)
-	if s != "" {
-		for _, f := range ignoreFields {
-			if f == key {
-				return s
+			for _, p := range paths {
+				if containsString(s.ignoreFields, p) {
+					continue
+				}
+				newPaths = append(newPaths, p)
 			}
+
+			paths = newPaths
+		} else if len(s.selectFields) != 0 {
+			paths = s.selectFields
 		}
-		for _, m := range valueModifiers {
-			o, err := m.Modify([]byte(s))
+
+		sort.Strings(paths)
+	}
+
+	for _, p := range paths {
+		v, err := pathService.Get(p)
+		if err != nil {
+			return nil, microerror.MaskAny(err)
+		}
+
+		b := []byte(cast.ToString(v))
+		for _, m := range s.valueModifiers {
+			b, err = m.Modify(b)
 			if err != nil {
-				panic(err)
+				return nil, microerror.MaskAny(err)
 			}
-			s = string(o)
+		}
+
+		err = pathService.Set(p, string(b))
+		if err != nil {
+			return nil, microerror.MaskAny(err)
 		}
 	}
 
-	return s
+	b, err := pathService.OutputBytes()
+	if err != nil {
+		return nil, microerror.MaskAny(err)
+	}
+
+	return b, nil
 }
 
-func toModifiedValueYAML(key interface{}, val interface{}, ignoreFields []string, valueModifiers ...ValueModifier) interface{} {
-	m1, ok := val.(map[interface{}]interface{})
-	if ok {
-		for k, v := range m1 {
-			m1[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
-		}
-
-		return m1
-	}
-
-	m2, ok := val.([]interface{})
-	if ok {
-		for i, v := range m2 {
-			m2[i] = toModifiedValueYAML("", v, ignoreFields, valueModifiers...)
-		}
-
-		return m2
-	}
-
-	s := cast.ToString(val)
-	if s != "" {
-		var m3 map[interface{}]interface{}
-		err := yaml.Unmarshal([]byte(s), &m3)
-		if err != nil || m3 == nil {
-			for _, f := range ignoreFields {
-				if f == key {
-					return s
-				}
-			}
-			for _, m := range valueModifiers {
-				o, err := m.Modify([]byte(s))
-				if err != nil {
-					panic(err)
-				}
-				s = string(o)
-			}
-		} else {
-			var m4 map[string]interface{}
-			err := json.Unmarshal([]byte(s), &m4)
-			if err != nil || m4 == nil {
-				for k, v := range m3 {
-					m3[k] = toModifiedValueYAML(k, v, ignoreFields, valueModifiers...)
-				}
-
-				b, err := yaml.Marshal(m3)
-				if err != nil {
-					panic(err)
-				}
-
-				return string(b)
-			} else {
-				for k, v := range m4 {
-					m4[k] = toModifiedValueJSON(k, v, ignoreFields, valueModifiers...)
-				}
-
-				b, err := json.MarshalIndent(m4, "", "  ")
-				if err != nil {
-					panic(err)
-				}
-
-				return string(b)
-			}
+func containsString(list []string, item string) bool {
+	for _, l := range list {
+		if l == item {
+			return true
 		}
 	}
 
-	return s
+	return false
 }
