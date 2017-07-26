@@ -15,7 +15,7 @@ type Config struct {
 }
 
 // DefaultConfig provides a default configuration to create a new overwrite
-// decoding value modifier by best effort.
+// value modifier by best effort.
 func DefaultConfig() Config {
 	return Config{
 		// Settings.
