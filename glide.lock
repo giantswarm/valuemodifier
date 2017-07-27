@@ -1,12 +1,10 @@
-hash: 95a59c8981606ab480b780d137643c1d23d1f420fe851772d614a4408bef74b1
-updated: 2017-07-25T15:52:05.266812939+02:00
+hash: 4695158acc7efa0cd5dfef5a681a2597c773038c1cd83976f6a606506a50d46e
+updated: 2017-07-27T17:10:08.052631521+02:00
 imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
-- name: github.com/giantswarm/microkit
-  version: c2f273484a749a94402dc3cfbd02913f57995484
-  subpackages:
-  - error
+- name: github.com/giantswarm/microerror
+  version: 7bf6a0a6d24b1e3a03af3ed3a8e3531d792ea3e3
 - name: github.com/juju/errgo
   version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
 - name: github.com/spf13/cast

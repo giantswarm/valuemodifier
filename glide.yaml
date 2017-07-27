@@ -1,13 +1,8 @@
 package: github.com/giantswarm/valuemodifier
 import:
-- package: github.com/giantswarm/microkit
-  subpackages:
-  - error
+- package: github.com/giantswarm/microerror
 - package: github.com/juju/errgo
 - package: golang.org/x/crypto
-  subpackages:
-  - openpgp
-  - openpgp/armor
 - package: gopkg.in/yaml.v2
   version: master
 - package: github.com/ghodss/yaml
