@@ -3,7 +3,7 @@ package valuemodifier
 import (
 	"sort"
 
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/valuemodifier/path"
 	"github.com/spf13/cast"
 )
@@ -36,12 +36,12 @@ func DefaultConfig() Config {
 func New(config Config) (*Service, error) {
 	// Dependencies.
 	if len(config.ValueModifiers) == 0 {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.ValueModifiers must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.ValueModifiers must not be empty")
 	}
 
 	// Settings.
 	if len(config.IgnoreFields) != 0 && len(config.SelectFields) != 0 {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.IgnoreFields must be empty when config.SelectFields provided")
+		return nil, microerror.Maskf(invalidConfigError, "config.IgnoreFields must be empty when config.SelectFields provided")
 	}
 
 	newService := &Service{
@@ -75,7 +75,7 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 		pathConfig.InputBytes = input
 		pathService, err = path.New(pathConfig)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 	}
 
@@ -86,7 +86,7 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 
 		err := pathService.Validate(fields)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 	}
 
@@ -94,7 +94,7 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 	{
 		paths, err = pathService.All()
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 
 		if len(s.ignoreFields) != 0 {
@@ -118,26 +118,26 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 	for _, p := range paths {
 		v, err := pathService.Get(p)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 
 		b := []byte(cast.ToString(v))
 		for _, m := range s.valueModifiers {
 			b, err = m.Modify(b)
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 		}
 
 		err = pathService.Set(p, string(b))
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 	}
 
 	b, err := pathService.OutputBytes()
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	return b, nil

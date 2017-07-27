@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"io/ioutil"
 
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )
@@ -31,7 +31,7 @@ func DefaultConfig() Config {
 func New(config Config) (*Service, error) {
 	// Settings.
 	if config.Pass == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.Pass must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.Pass must not be empty")
 	}
 
 	newService := &Service{
@@ -51,7 +51,7 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(value)
 	decoder, err := armor.Decode(buf)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	promptFunc := func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
@@ -59,12 +59,12 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 	}
 	details, err := openpgp.ReadMessage(decoder.Body, nil, promptFunc, nil)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	b, err := ioutil.ReadAll(details.UnverifiedBody)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	return b, nil

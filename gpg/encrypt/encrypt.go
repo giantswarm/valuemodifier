@@ -3,7 +3,7 @@ package encrypt
 import (
 	"bytes"
 
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )
@@ -30,7 +30,7 @@ func DefaultConfig() Config {
 func New(config Config) (*Service, error) {
 	// Settings.
 	if config.Pass == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.Pass must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.Pass must not be empty")
 	}
 
 	newService := &Service{
@@ -50,17 +50,17 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	encoder, err := armor.Encode(buf, openpgp.SignatureType, nil)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	encrypter, err := openpgp.SymmetricallyEncrypt(encoder, []byte(s.pass), nil, nil)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	_, err = encrypter.Write(value)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	encrypter.Close()

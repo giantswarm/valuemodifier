@@ -1,33 +1,31 @@
 package path
 
-import (
-	"github.com/juju/errgo"
-)
+import "github.com/giantswarm/microerror"
 
-var invalidConfigError = errgo.New("invalid config")
+var invalidConfigError = microerror.New("invalid config")
 
 // IsInvalidConfig asserts invalidConfigError.
 func IsInvalidConfig(err error) bool {
-	return errgo.Cause(err) == invalidConfigError
+	return microerror.Cause(err) == invalidConfigError
 }
 
-var invalidFormatError = errgo.New("invalid format")
+var invalidFormatError = microerror.New("invalid format")
 
 // IsInvalidFormat asserts invalidFormatError.
 func IsInvalidFormat(err error) bool {
-	return errgo.Cause(err) == invalidFormatError
+	return microerror.Cause(err) == invalidFormatError
 }
 
-var keyNotIndexError = errgo.New("key not index")
+var keyNotIndexError = microerror.New("key not index")
 
 // IsKeyNotIndex asserts keyNotIndexError.
 func IsKeyNotIndex(err error) bool {
-	return errgo.Cause(err) == keyNotIndexError
+	return microerror.Cause(err) == keyNotIndexError
 }
 
-var notFoundError = errgo.New("not found")
+var notFoundError = microerror.New("not found")
 
 // IsNotFound asserts notFoundError.
 func IsNotFound(err error) bool {
-	return errgo.Cause(err) == notFoundError
+	return microerror.Cause(err) == notFoundError
 }
