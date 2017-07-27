@@ -12,7 +12,7 @@ import (
 	yaml "gopkg.in/yaml.v1"
 
 	yamltojson "github.com/ghodss/yaml"
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 	"github.com/spf13/cast"
 )
 
@@ -45,10 +45,10 @@ func DefaultConfig() Config {
 func New(config Config) (*Service, error) {
 	// Settings.
 	if config.InputBytes == nil {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.InputBytes must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.InputBytes must not be empty")
 	}
 	if config.Separator == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.Separator must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.Separator must not be empty")
 	}
 
 	var err error
@@ -59,12 +59,12 @@ func New(config Config) (*Service, error) {
 	{
 		jsonBytes, isJSON, err = toJSON(config.InputBytes)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 
 		err := json.Unmarshal(jsonBytes, &jsonStructure)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 	}
 
@@ -100,7 +100,7 @@ type Service struct {
 func (s *Service) All() ([]string, error) {
 	paths, err := s.allFromInterface(s.jsonStructure)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	sort.Strings(paths)
@@ -112,7 +112,7 @@ func (s *Service) All() ([]string, error) {
 func (s *Service) Get(path string) (interface{}, error) {
 	value, err := s.getFromInterface(s.escapeKey(path), s.jsonStructure)
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	return value, nil
@@ -124,7 +124,7 @@ func (s *Service) OutputBytes() ([]byte, error) {
 		var err error
 		b, err = yamltojson.JSONToYAML(b)
 		if err != nil {
-			return nil, microerror.MaskAny(err)
+			return nil, microerror.Mask(err)
 		}
 	}
 
@@ -137,12 +137,12 @@ func (s *Service) Set(path string, value interface{}) error {
 
 	s.jsonStructure, err = s.setFromInterface(s.escapeKey(path), value, s.jsonStructure)
 	if err != nil {
-		return microerror.MaskAny(err)
+		return microerror.Mask(err)
 	}
 
 	b, err := json.MarshalIndent(s.jsonStructure, "", "  ")
 	if err != nil {
-		return microerror.MaskAny(err)
+		return microerror.Mask(err)
 	}
 	s.jsonBytes = b
 
@@ -152,7 +152,7 @@ func (s *Service) Set(path string, value interface{}) error {
 func (s *Service) Validate(paths []string) error {
 	all, err := s.All()
 	if err != nil {
-		return microerror.MaskAny(err)
+		return microerror.Mask(err)
 	}
 
 	for _, p := range paths {
@@ -160,7 +160,7 @@ func (s *Service) Validate(paths []string) error {
 			continue
 		}
 
-		return microerror.MaskAnyf(notFoundError, "path '%s'", p)
+		return microerror.Maskf(notFoundError, "path '%s'", p)
 	}
 
 	return nil
@@ -178,7 +178,7 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			for k, v := range stringMap {
 				ps, err := s.allFromInterface(v)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				k := s.separatorExpression.ReplaceAllString(k, fmt.Sprintf(`\%s`, s.separator))
@@ -207,7 +207,7 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			for i, v := range slice {
 				ps, err := s.allFromInterface(v)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				for _, p := range ps {
@@ -234,12 +234,12 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				ps, err := s.allFromInterface(jsonStructure)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				return ps, nil
@@ -273,13 +273,13 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 
 					v, err := s.getFromInterface(recPath, value)
 					if err != nil {
-						return nil, microerror.MaskAny(err)
+						return nil, microerror.Mask(err)
 					}
 
 					return v, nil
 				}
 			} else {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
+				return nil, microerror.Maskf(notFoundError, "key '%s'", path)
 			}
 		}
 	}
@@ -292,17 +292,17 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 		} else {
 			index, err := indexFromKey(key)
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", key)
+				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
 			v, err := s.getFromInterface(recPath, slice[index])
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 
 			return v, nil
@@ -322,12 +322,12 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				v, err := s.getFromInterface(path, jsonStructure)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				return v, nil
@@ -354,7 +354,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 					stringMap[path] = value
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
+					return nil, microerror.Maskf(notFoundError, "key '%s'", path)
 				}
 			} else {
 				_, ok := stringMap[key]
@@ -363,13 +363,13 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 
 					modified, err := s.setFromInterface(recPath, value, stringMap[key])
 					if err != nil {
-						return nil, microerror.MaskAny(err)
+						return nil, microerror.Mask(err)
 					}
 					stringMap[key] = modified
 
 					return stringMap, nil
 				} else {
-					return nil, microerror.MaskAnyf(notFoundError, "key '%s'", path)
+					return nil, microerror.Maskf(notFoundError, "key '%s'", path)
 				}
 			}
 		}
@@ -383,17 +383,17 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 		} else {
 			index, err := indexFromKey(key)
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 
 			if index >= len(slice) {
-				return nil, microerror.MaskAnyf(notFoundError, "key '%s'", key)
+				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
 			modified, err := s.setFromInterface(recPath, value, slice[index])
 			if err != nil {
-				return nil, microerror.MaskAny(err)
+				return nil, microerror.Mask(err)
 			}
 			slice[index] = modified
 
@@ -414,24 +414,24 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				modified, err := s.setFromInterface(path, value, jsonStructure)
 				if err != nil {
-					return nil, microerror.MaskAny(err)
+					return nil, microerror.Mask(err)
 				}
 
 				var b []byte
 				if !isJSON {
 					b, err = yamltojson.Marshal(modified)
 					if err != nil {
-						return nil, microerror.MaskAny(err)
+						return nil, microerror.Mask(err)
 					}
 				} else {
 					b, err = json.MarshalIndent(modified, "", "  ")
 					if err != nil {
-						return nil, microerror.MaskAny(err)
+						return nil, microerror.Mask(err)
 					}
 				}
 
@@ -461,13 +461,13 @@ func indexFromKey(key string) (int, error) {
 	re := regexp.MustCompile("\\[[0-9]\\]")
 	ok := re.MatchString(key)
 	if !ok {
-		return 0, microerror.MaskAnyf(keyNotIndexError, key)
+		return 0, microerror.Maskf(keyNotIndexError, key)
 	}
 
 	s := key[1 : len(key)-1]
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return 0, microerror.MaskAny(err)
+		return 0, microerror.Mask(err)
 	}
 
 	return i, nil
@@ -510,12 +510,12 @@ func toJSON(b []byte) ([]byte, bool, error) {
 		var jsonList []interface{}
 		err := yamltojson.Unmarshal(b, &jsonList)
 		if err != nil {
-			return nil, false, microerror.MaskAny(err)
+			return nil, false, microerror.Mask(err)
 		}
 
 		jsonBytes, err = json.Marshal(jsonList)
 		if err != nil {
-			return nil, false, microerror.MaskAny(err)
+			return nil, false, microerror.Mask(err)
 		}
 
 		return jsonBytes, false, nil
@@ -525,16 +525,16 @@ func toJSON(b []byte) ([]byte, bool, error) {
 		var jsonMap map[string]interface{}
 		err := yamltojson.Unmarshal(b, &jsonMap)
 		if err != nil {
-			return nil, false, microerror.MaskAny(err)
+			return nil, false, microerror.Mask(err)
 		}
 
 		jsonBytes, err = json.Marshal(jsonMap)
 		if err != nil {
-			return nil, false, microerror.MaskAny(err)
+			return nil, false, microerror.Mask(err)
 		}
 
 		return jsonBytes, false, nil
 	}
 
-	return nil, false, microerror.MaskAny(invalidFormatError)
+	return nil, false, microerror.Mask(invalidFormatError)
 }

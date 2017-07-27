@@ -1,7 +1,7 @@
 package overwrite
 
 import (
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 )
 
 // Config represents the configuration used to create a new overwrite
@@ -27,7 +27,7 @@ func DefaultConfig() Config {
 func New(config Config) (*Service, error) {
 	// Settings.
 	if config.NewValue == "" {
-		return nil, microerror.MaskAnyf(invalidConfigError, "config.NewValue must not be empty")
+		return nil, microerror.Maskf(invalidConfigError, "config.NewValue must not be empty")
 	}
 
 	newService := &Service{

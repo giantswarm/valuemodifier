@@ -3,7 +3,7 @@ package decode
 import (
 	"encoding/base64"
 
-	microerror "github.com/giantswarm/microkit/error"
+	"github.com/giantswarm/microerror"
 )
 
 // Config represents the configuration used to create a new base64 decoding
@@ -31,7 +31,7 @@ type Service struct {
 func (s *Service) Modify(value []byte) ([]byte, error) {
 	decoded, err := base64.StdEncoding.DecodeString(string(value))
 	if err != nil {
-		return nil, microerror.MaskAny(err)
+		return nil, microerror.Mask(err)
 	}
 
 	return decoded, nil

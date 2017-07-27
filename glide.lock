@@ -1,18 +1,16 @@
-hash: 95a59c8981606ab480b780d137643c1d23d1f420fe851772d614a4408bef74b1
-updated: 2017-07-25T15:52:05.266812939+02:00
+hash: f3155337d89beb00b2a694fde9411e58e92251aebe8a43ae81d0e062fdf81cd0
+updated: 2017-07-27T17:17:28.824880872+02:00
 imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
-- name: github.com/giantswarm/microkit
-  version: c2f273484a749a94402dc3cfbd02913f57995484
-  subpackages:
-  - error
+- name: github.com/giantswarm/microerror
+  version: 7bf6a0a6d24b1e3a03af3ed3a8e3531d792ea3e3
 - name: github.com/juju/errgo
   version: 08cceb5d0b5331634b9826762a8fd53b29b86ad8
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: golang.org/x/crypto
-  version: 69be088f860613049aa58c65154d1b1d32bbdf90
+  version: 6914964337150723782436d56b3f21610a74ce7b
   subpackages:
   - cast5
   - openpgp
