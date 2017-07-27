@@ -298,11 +298,37 @@ k4:
 				`k1.k2\.k3.k4`,
 			},
 		},
+
+		// Test case 20, ensure a single unnested path can be found, even though its
+		// value is empty.
+		{
+			InputBytes: []byte(`{
+  "k1": ""
+}`),
+			Expected: []string{
+				"k1",
+			},
+		},
+
+		// Test case 21, ensure a single nested path can be found, even though its
+		// value is empty.
+		{
+			InputBytes: []byte(`{
+  "k1": {
+    "k2": {
+      "k3": ""
+    }
+  }
+}`),
+			Expected: []string{
+				"k1.k2.k3",
+			},
+		},
 	}
 
-	for i, testCase := range testCases {
+	for i, tc := range testCases {
 		config := DefaultConfig()
-		config.InputBytes = testCase.InputBytes
+		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
@@ -312,8 +338,8 @@ k4:
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
-		if !reflect.DeepEqual(testCase.Expected, output) {
-			t.Fatal("test", i+1, "expected", testCase.Expected, "got", output)
+		if !reflect.DeepEqual(tc.Expected, output) {
+			t.Fatal("test", i+1, "expected", tc.Expected, "got", output)
 		}
 	}
 }
@@ -525,28 +551,52 @@ k4:
 			Path:     `k1.k2\.k3.k4`,
 			Expected: "v4",
 		},
+
+		// Test case 17, ensure the value of a single unnested path can be returned,
+		// even though its value is empty.
+		{
+			InputBytes: []byte(`{
+  "k1": ""
+}`),
+			Path:     "k1",
+			Expected: "",
+		},
+
+		// Test case 18, ensure the value of a single nested path can be returned,
+		// even though its value is empty.
+		{
+			InputBytes: []byte(`{
+  "k1": {
+    "k2": {
+      "k3": ""
+    }
+  }
+}`),
+			Path:     "k1.k2.k3",
+			Expected: "",
+		},
 	}
 
-	for i, testCase := range testCases {
+	for i, tc := range testCases {
 		config := DefaultConfig()
-		config.InputBytes = testCase.InputBytes
+		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
 
-		output, err := newService.Get(testCase.Path)
+		output, err := newService.Get(tc.Path)
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
-		if !reflect.DeepEqual(testCase.Expected, output) {
-			t.Fatal("test", i+1, "expected", testCase.Expected, "got", output)
+		if !reflect.DeepEqual(tc.Expected, output) {
+			t.Fatal("test", i+1, "expected", tc.Expected, "got", output)
 		}
 	}
 }
 
 func Test_Service_Get_Error(t *testing.T) {
-	textCases := []struct {
+	testCases := []struct {
 		InputBytes   []byte
 		Path         string
 		ErrorMatcher func(error) bool
@@ -594,7 +644,7 @@ func Test_Service_Get_Error(t *testing.T) {
 		},
 	}
 
-	for i, tc := range textCases {
+	for i, tc := range testCases {
 		config := DefaultConfig()
 		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
@@ -610,7 +660,7 @@ func Test_Service_Get_Error(t *testing.T) {
 }
 
 func Test_Service_Set(t *testing.T) {
-	textCases := []struct {
+	testCases := []struct {
 		InputBytes []byte
 		Path       string
 		Value      string
@@ -1014,9 +1064,43 @@ k4:
   }
 }`),
 		},
+
+		// Test case 22, ensure the value of a single unnested path can be modified,
+		// even though its value is empty.
+		{
+			InputBytes: []byte(`{
+  "k1": ""
+}`),
+			Path:  "k1",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": "modified"
+}`),
+		},
+
+		// Test case 23, ensure the value of a single nested path can be modified,
+		// even though its value is empty.
+		{
+			InputBytes: []byte(`{
+  "k1": {
+    "k2": {
+      "k3": ""
+    }
+  }
+}`),
+			Path:  "k1.k2.k3",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": {
+    "k2": {
+      "k3": "modified"
+    }
+  }
+}`),
+		},
 	}
 
-	for i, tc := range textCases {
+	for i, tc := range testCases {
 		config := DefaultConfig()
 		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
@@ -1040,7 +1124,7 @@ k4:
 }
 
 func Test_Service_Set_Error(t *testing.T) {
-	textCases := []struct {
+	testCases := []struct {
 		InputBytes   []byte
 		Path         string
 		ErrorMatcher func(error) bool
@@ -1088,7 +1172,7 @@ func Test_Service_Set_Error(t *testing.T) {
 		},
 	}
 
-	for i, tc := range textCases {
+	for i, tc := range testCases {
 		config := DefaultConfig()
 		config.InputBytes = tc.InputBytes
 		newService, err := New(config)
