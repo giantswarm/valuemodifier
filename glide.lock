@@ -1,5 +1,5 @@
-hash: 4695158acc7efa0cd5dfef5a681a2597c773038c1cd83976f6a606506a50d46e
-updated: 2017-07-27T17:10:08.052631521+02:00
+hash: f3155337d89beb00b2a694fde9411e58e92251aebe8a43ae81d0e062fdf81cd0
+updated: 2017-07-27T17:17:28.824880872+02:00
 imports:
 - name: github.com/ghodss/yaml
   version: 0ca9ea5df5451ffdf184b4428c902747c2c11cd7
@@ -10,7 +10,7 @@ imports:
 - name: github.com/spf13/cast
   version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: golang.org/x/crypto
-  version: 69be088f860613049aa58c65154d1b1d32bbdf90
+  version: 6914964337150723782436d56b3f21610a74ce7b
   subpackages:
   - cast5
   - openpgp

@@ -1,8 +1,9 @@
 package: github.com/giantswarm/valuemodifier
 import:
 - package: github.com/giantswarm/microerror
-- package: github.com/juju/errgo
+  version: master
 - package: golang.org/x/crypto
+  version: master
 - package: gopkg.in/yaml.v2
   version: master
 - package: github.com/ghodss/yaml
