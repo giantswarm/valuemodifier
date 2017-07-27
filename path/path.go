@@ -224,6 +224,8 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 		str, err := cast.ToStringE(value)
 		if err != nil {
 			// fall through
+		} else if str == "" {
+			// fall through
 		} else {
 			jsonBytes, _, err := toJSON([]byte(str))
 			if err != nil {
