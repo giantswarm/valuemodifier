@@ -48,6 +48,10 @@ type Service struct {
 }
 
 func (s *Service) Modify(value []byte) ([]byte, error) {
+	if len(value) == 0 {
+		return value, nil
+	}
+
 	buf := bytes.NewBuffer(value)
 	decoder, err := armor.Decode(buf)
 	if err != nil {
