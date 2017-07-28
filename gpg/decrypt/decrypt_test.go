@@ -29,3 +29,23 @@ l5T01NrWN5NQZM+H4ngibenh8GwA
 		t.Fatal("expected", expected, "got", modified)
 	}
 }
+
+func Test_GPG_Decrypt_Service_Modify_Empty(t *testing.T) {
+	config := DefaultConfig()
+	config.Pass = "foo"
+	newService, err := New(config)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	expected := []byte("")
+	value := []byte("")
+	modified, err := newService.Modify(value)
+	if err != nil {
+		t.Fatal("expected", nil, "got", err)
+	}
+
+	if string(modified) != string(expected) {
+		t.Fatal("expected", expected, "got", modified)
+	}
+}
