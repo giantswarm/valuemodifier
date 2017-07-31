@@ -9,11 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	yaml "gopkg.in/yaml.v1"
-
 	yamltojson "github.com/ghodss/yaml"
 	"github.com/giantswarm/microerror"
 	"github.com/spf13/cast"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
