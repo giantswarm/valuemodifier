@@ -1186,3 +1186,68 @@ func Test_Service_Set_Error(t *testing.T) {
 		}
 	}
 }
+
+func Test_Service_Validate(t *testing.T) {
+	testCases := []struct {
+		InputBytes []byte
+		Paths      []string
+	}{
+		// Test 1, when there is only 1 field to valiate with one level nesting
+		// found.
+		{
+			InputBytes: []byte(`{
+  "k1": [
+    {
+      "k2": "v2"
+    }
+  ]
+}`),
+			Paths: []string{"k2"},
+		},
+
+		// Test 2, when there is only 1 field to valiate with two level nesting
+		// found.
+		{
+			InputBytes: []byte(`{
+  "k1": [
+    {
+      "k2": {
+				  "k3": "v3"
+			}
+    }
+  ]
+}`),
+			Paths: []string{"k3"},
+		},
+
+		// Test 3, when there are only 2 fields to valiate with different level nesting
+		// found.
+		{
+			InputBytes: []byte(`{
+	"k1": [
+		{
+			"k2": "v2",
+			"k3": {
+				"k4": "v4"
+		  }
+		}
+	]
+}`),
+			Paths: []string{"k2", "k4"},
+		},
+	}
+
+	for i, tc := range testCases {
+		config := DefaultConfig()
+		config.InputBytes = tc.InputBytes
+		newService, err := New(config)
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
+
+		err = newService.Validate(tc.Paths)
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
+	}
+}
