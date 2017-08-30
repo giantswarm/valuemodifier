@@ -412,6 +412,34 @@ pass2: pass2
 `,
 		},
 
+		// Test case 12, ensure a real config example for modifier modifies all secrets,
+		// but ignores the ones configured using IgnoreFields.
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{
+				"ipmiIp",
+				"privateIp",
+				"providerId",
+			},
+			SelectFields: []string{},
+			Input: `credentials:
+- ipmiIp: 192.168.0.2
+  password: password
+  privateIp: 10.0.0.1
+  providerId: providerId
+  username: username
+`,
+			Expected: `credentials:
+- ipmiIp: 192.168.0.2
+  password: password-modified1
+  privateIp: 10.0.0.1
+  providerId: providerId
+  username: username-modified1
+`,
+		},
+
 		// Test case 11, ensure a real world example works with all fields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -461,7 +489,7 @@ pass2: pass2
 `,
 		},
 
-		// Test case 12, ensure a real world example works with selected fields.
+		// Test case 13, ensure a real world example works with selected fields.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
