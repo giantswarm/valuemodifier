@@ -575,6 +575,26 @@ k4:
 			Path:     "k1.k2.k3",
 			Expected: "",
 		},
+
+		// Test case 19, ensure the value of multiple paths(array index > 9) with unnested inline
+		// YAML lists can be returned.
+		{
+			InputBytes: []byte(`{
+  "k": ` + strconv.Quote(`- k0: v0
+- k1: v1
+- k2: v2
+- k3: v3
+- k4: v4
+- k5: v5
+- k6: v6
+- k7: v7
+- k8: v8
+- k9: v9
+- k10: v10`) + `
+}`),
+			Path:     "k.[10].k10",
+			Expected: "v10",
+		},
 	}
 
 	for i, tc := range testCases {
