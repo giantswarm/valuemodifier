@@ -2,6 +2,7 @@ package valuemodifier
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/giantswarm/microerror"
 	"github.com/giantswarm/valuemodifier/path"
@@ -101,7 +102,8 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 			var newPaths []string
 
 			for _, p := range paths {
-				if containsString(s.ignoreFields, p) {
+				pv := strings.Split(p, ".")
+				if containsString(s.ignoreFields, pv[len(pv)-1]) {
 					continue
 				}
 				newPaths = append(newPaths, p)

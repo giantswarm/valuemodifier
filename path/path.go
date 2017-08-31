@@ -154,8 +154,18 @@ func (s *Service) Validate(paths []string) error {
 		return microerror.Mask(err)
 	}
 
+	var trimmedAll []string
+	for _, service := range all {
+		pv := strings.Split(service, ".")
+		trimmedAll = append(trimmedAll, pv[len(pv)-1])
+	}
+
 	for _, p := range paths {
-		if containsString(all, p) {
+		fields := trimmedAll
+		if strings.Index(p, ".") != -1 {
+			fields = all
+		}
+		if containsString(fields, p) {
 			continue
 		}
 
@@ -457,7 +467,7 @@ func containsString(list []string, item string) bool {
 }
 
 func indexFromKey(key string) (int, error) {
-	re := regexp.MustCompile("\\[[0-9]\\]")
+	re := regexp.MustCompile("\\[[0-9]+\\]")
 	ok := re.MatchString(key)
 	if !ok {
 		return 0, microerror.Maskf(keyNotIndexError, key)
