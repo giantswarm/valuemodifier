@@ -58,9 +58,16 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	promptFunc := func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
-		return []byte(s.pass), nil
-	}
+	promptFunc := func() func([]openpgp.Key, bool) ([]byte, error) {
+		retried := false
+		return func(keys []openpgp.Key, symmetric bool) ([]byte, error) {
+			if !retried {
+				retried = true
+				return []byte(s.pass), nil
+			}
+			return nil, microerror.Maskf(wrongGPGPasswordError, "Decryption failed with given GPG password")
+		}
+	}()
 	details, err := openpgp.ReadMessage(decoder.Body, nil, promptFunc, nil)
 	if err != nil {
 		return nil, microerror.Mask(err)
