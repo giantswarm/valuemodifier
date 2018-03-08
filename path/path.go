@@ -353,32 +353,42 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 
 	// process map
 	{
-		stringMap, err := cast.ToStringMapE(jsonStructure)
-		if err != nil {
-			// fall through
+		_, ok := jsonStructure.(string)
+		if ok {
+			// Fall through in case our received JSON structure is actually a string.
+			// cast.ToStringMapE was working as expected until
+			// https://github.com/spf13/cast/pull/59, so we have to make sure we do
+			// not call cast.ToStringMapE only if we do not have an actual string,
+			// because cast.ToStringMapE would now accept the string instead of
+			// returning an error like it did before.
 		} else {
-			if len(split) == 1 {
-				_, ok := stringMap[path]
-				if ok {
-					stringMap[path] = value
-					return stringMap, nil
-				} else {
-					return nil, microerror.Maskf(notFoundError, "key '%s'", path)
-				}
+			stringMap, err := cast.ToStringMapE(jsonStructure)
+			if err != nil {
+				// fall through
 			} else {
-				_, ok := stringMap[key]
-				if ok {
-					recPath := strings.Join(split[1:], s.separator)
-
-					modified, err := s.setFromInterface(recPath, value, stringMap[key])
-					if err != nil {
-						return nil, microerror.Mask(err)
+				if len(split) == 1 {
+					_, ok := stringMap[path]
+					if ok {
+						stringMap[path] = value
+						return stringMap, nil
+					} else {
+						return nil, microerror.Maskf(notFoundError, "key '%s'", path)
 					}
-					stringMap[key] = modified
-
-					return stringMap, nil
 				} else {
-					return nil, microerror.Maskf(notFoundError, "key '%s'", path)
+					_, ok := stringMap[key]
+					if ok {
+						recPath := strings.Join(split[1:], s.separator)
+
+						modified, err := s.setFromInterface(recPath, value, stringMap[key])
+						if err != nil {
+							return nil, microerror.Mask(err)
+						}
+						stringMap[key] = modified
+
+						return stringMap, nil
+					} else {
+						return nil, microerror.Maskf(notFoundError, "key '%s'", path)
+					}
 				}
 			}
 		}
