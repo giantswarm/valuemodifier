@@ -98,9 +98,8 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 			return nil, microerror.Mask(err)
 		}
 
+		var newPaths []string
 		if len(s.ignoreFields) != 0 {
-			var newPaths []string
-
 			for _, p := range paths {
 				pv := strings.Split(p, ".")
 				if containsString(s.ignoreFields, pv[len(pv)-1]) {
@@ -108,12 +107,16 @@ func (s *Service) Traverse(input []byte) ([]byte, error) {
 				}
 				newPaths = append(newPaths, p)
 			}
-
 			paths = newPaths
 		} else if len(s.selectFields) != 0 {
-			paths = s.selectFields
+			for _, p := range paths {
+				pv := strings.Split(p, ".")
+				if containsString(s.selectFields, pv[len(pv)-1]) {
+					newPaths = append(newPaths, p)
+				}
+			}
+			paths = newPaths
 		}
-
 		sort.Strings(paths)
 	}
 
