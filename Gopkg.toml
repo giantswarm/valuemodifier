@@ -27,8 +27,8 @@
 
 
 [[constraint]]
+  branch = "master"
   name = "github.com/ghodss/yaml"
-  version = "1.0.0"
 
 [[constraint]]
   branch = "master"
