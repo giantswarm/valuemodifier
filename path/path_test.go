@@ -1118,6 +1118,55 @@ k4:
   }
 }`),
 		},
+
+		// Test case 24, ensure the value of a single unnested path can be set,
+		// even though its key is missing.
+		{
+			InputBytes: []byte(`{
+  "k1": ""
+}`),
+			Path:  "k2",
+			Value: "added",
+			Expected: []byte(`{
+  "k1": "",
+  "k2": "added"
+}`),
+		},
+
+		// Test case 25, ensure the value of a multi level nested path can be set,
+		// even though its key is missing.
+		{
+			InputBytes: []byte(`{
+  "k1": {}
+}`),
+			Path:  "k1.s1.e3",
+			Value: "added",
+			Expected: []byte(`{
+  "k1": {
+    "s1": {
+      "e3": "added"
+    }
+  }
+}`),
+		},
+
+		// Test case 26, ensure the value of a multi level nested path can be set,
+		// even though its key is missing.
+		{
+			InputBytes: []byte(`{
+  "k1": ""
+}`),
+			Path:  "k2.s1.e3",
+			Value: "added",
+			Expected: []byte(`{
+  "k1": "",
+  "k2": {
+    "s1": {
+      "e3": "added"
+    }
+  }
+}`),
+		},
 	}
 
 	for i, tc := range testCases {
@@ -1160,34 +1209,6 @@ func Test_Service_Set_Error(t *testing.T) {
   ]
 }`),
 			Path:         "k1.[1].k2",
-			ErrorMatcher: IsNotFound,
-		},
-
-		// Test 2, when there is k1 at the beginning of the path key k3 cannot be
-		// found.
-		{
-			InputBytes: []byte(`{
-  "k1": [
-    {
-      "k2": "v2"
-    }
-  ]
-}`),
-			Path:         "k3.[0].k2",
-			ErrorMatcher: IsNotFound,
-		},
-
-		// Test 3, when there is k2 at the end of the path key k3 cannot be
-		// found.
-		{
-			InputBytes: []byte(`{
-  "k1": [
-    {
-      "k2": "v2"
-    }
-  ]
-}`),
-			Path:         "k1.[0].k3",
 			ErrorMatcher: IsNotFound,
 		},
 	}
