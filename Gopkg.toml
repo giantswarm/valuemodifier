@@ -27,8 +27,8 @@
 
 
 [[constraint]]
+  branch = "master"
   name = "github.com/ghodss/yaml"
-  version = "=1.0.0"
 
 [[constraint]]
   branch = "master"
@@ -44,7 +44,7 @@
 
 [[constraint]]
   name = "gopkg.in/yaml.v2"
-  version = "=2.2.2"
+  version = "2.1.1"
 
 
 
