@@ -4,7 +4,7 @@ import (
 	"github.com/giantswarm/microerror"
 )
 
-var executionFailedError = &microerror.Error{
+var executionFailedError = microerror.Error{
 	Kind: "executionFailedError",
 }
 
@@ -13,7 +13,7 @@ func IsExecutionFailed(err error) bool {
 	return microerror.Cause(err) == executionFailedError
 }
 
-var fieldNotFoundError = &microerror.Error{
+var fieldNotFoundError = microerror.Error{
 	Kind: "fieldNotFoundError",
 }
 
@@ -22,7 +22,7 @@ func IsFieldNotFound(err error) bool {
 	return microerror.Cause(err) == fieldNotFoundError
 }
 
-var invalidConfigError = &microerror.Error{
+var invalidConfigError = microerror.Error{
 	Kind: "invalidConfigError",
 }
 
