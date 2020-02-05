@@ -2,7 +2,7 @@ package path
 
 import "github.com/giantswarm/microerror"
 
-var invalidConfigError = microerror.Error{
+var invalidConfigError = &microerror.Error{
 	Kind: "invalidConfigError",
 }
 
@@ -11,7 +11,7 @@ func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
 
-var invalidFormatError = microerror.Error{
+var invalidFormatError = &microerror.Error{
 	Kind: "invalidFormatError",
 }
 
@@ -20,7 +20,7 @@ func IsInvalidFormat(err error) bool {
 	return microerror.Cause(err) == invalidFormatError
 }
 
-var keyNotIndexError = microerror.Error{
+var keyNotIndexError = &microerror.Error{
 	Kind: "keyNotIndexError",
 }
 
@@ -29,7 +29,7 @@ func IsKeyNotIndex(err error) bool {
 	return microerror.Cause(err) == keyNotIndexError
 }
 
-var notFoundError = microerror.Error{
+var notFoundError = &microerror.Error{
 	Kind: "notFoundError",
 }
 

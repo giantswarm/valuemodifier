@@ -2,7 +2,7 @@ package overwrite
 
 import "github.com/giantswarm/microerror"
 
-var invalidConfigError = microerror.Error{
+var invalidConfigError = &microerror.Error{
 	Kind: "invalidConfigError",
 }
 

@@ -2,7 +2,7 @@ package decrypt
 
 import "github.com/giantswarm/microerror"
 
-var invalidConfigError = microerror.Error{
+var invalidConfigError = &microerror.Error{
 	Kind: "invalidConfigError",
 }
 
@@ -11,7 +11,7 @@ func IsInvalidConfig(err error) bool {
 	return microerror.Cause(err) == invalidConfigError
 }
 
-var wrongGPGPasswordError = microerror.Error{
+var wrongGPGPasswordError = &microerror.Error{
 	Kind: "wrongGPGPasswordError",
 }
 
