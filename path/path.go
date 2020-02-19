@@ -186,8 +186,9 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			var paths []string
 
 			for k, v := range stringMap {
+				var ps []string
 				if reflect.TypeOf(v).String() != "string" {
-					ps, err := s.allFromInterface(v)
+					ps, err = s.allFromInterface(v)
 					if err != nil {
 						return nil, microerror.Mask(err)
 					}
