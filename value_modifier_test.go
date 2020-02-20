@@ -351,10 +351,11 @@ pass6: 123456-modified1-modified2
     baz: pass2
   foo: pass3
 `,
-			Expected: `pass1: |
+			Expected: `pass1: |-
   bar:
-    baz: pass2-modified1
-  foo: pass3-modified1
+    baz: pass2
+  foo: pass3
+  -modified1
 `,
 		},
 
@@ -378,10 +379,11 @@ pass6: 123456-modified1-modified2
   {
     "block1": {
       "block11": {
-        "pass2": "pass2-modified1"
+        "pass2": "pass2"
       }
     }
   }
+  -modified1
 `,
 		},
 
@@ -482,10 +484,10 @@ pass2: pass2
             {
               "auths": {
                 "quay.io": {
-                  "auth": "magic-modified1"
+                  "auth": "magic"
                 }
               }
-            }
+            }-modified1
 `,
 		},
 
