@@ -163,7 +163,7 @@ func (s *Service) Validate(paths []string) error {
 
 	for _, p := range paths {
 		fields := trimmedAll
-		if strings.Index(p, ".") != -1 {
+		if strings.Index(p, ".") != -1 { // nolint:gosimple
 			fields = all
 		}
 		if containsString(fields, p) {
@@ -196,7 +196,7 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 
 				k := s.separatorExpression.ReplaceAllString(k, fmt.Sprintf(`\%s`, s.separator))
 
-				if ps != nil {
+				if ps != nil { // nolint:gosimple
 					for _, p := range ps {
 						paths = append(paths, fmt.Sprintf("%s%s%s", k, s.separator, p))
 					}
@@ -491,7 +491,7 @@ func containsString(list []string, item string) bool {
 }
 
 func indexFromKey(key string) (int, error) {
-	re := regexp.MustCompile("\\[[0-9]+\\]")
+	re := regexp.MustCompile(`\[[0-9]+\]`)
 	ok := re.MatchString(key)
 	if !ok {
 		return 0, microerror.Maskf(keyNotIndexError, key)
@@ -524,10 +524,6 @@ func isYAMLList(b []byte) bool {
 func isYAMLObject(b []byte) bool {
 	var m map[interface{}]interface{}
 	return yaml.Unmarshal(b, &m) == nil && !bytes.HasPrefix(b, []byte("-"))
-}
-
-func pathWithKey(key string, path string, separator string) string {
-	return strings.Join([]string{key, path}, separator)
 }
 
 func toJSON(b []byte) ([]byte, bool, error) {

@@ -5,8 +5,9 @@ import (
 	"strings"
 
 	"github.com/giantswarm/microerror"
-	"github.com/giantswarm/valuemodifier/path"
 	"github.com/spf13/cast"
+
+	"github.com/giantswarm/valuemodifier/path"
 )
 
 // Config represents the configuration used to create a new value modifier
