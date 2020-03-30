@@ -7,5 +7,5 @@ require (
 	github.com/giantswarm/microerror v0.2.0
 	github.com/spf13/cast v1.3.0
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.8
 )
