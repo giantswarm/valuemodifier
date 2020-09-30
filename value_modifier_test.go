@@ -2,6 +2,7 @@ package valuemodifier
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -544,21 +545,23 @@ pass2: pass2
 	}
 
 	for i, testCase := range testCases {
-		config := DefaultConfig()
-		config.ValueModifiers = testCase.ValueModifiers
-		config.IgnoreFields = testCase.IgnoreFields
-		config.SelectFields = testCase.SelectFields
-		newService, err := New(config)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			config := DefaultConfig()
+			config.ValueModifiers = testCase.ValueModifiers
+			config.IgnoreFields = testCase.IgnoreFields
+			config.SelectFields = testCase.SelectFields
+			newService, err := New(config)
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
 
-		output, err := newService.Traverse([]byte(testCase.Input))
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-		if string(output) != testCase.Expected {
-			t.Fatal("test", i+1, "expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
-		}
+			output, err := newService.Traverse([]byte(testCase.Input))
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
+			if string(output) != testCase.Expected {
+				t.Fatal("expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
+			}
+		})
 	}
 }
