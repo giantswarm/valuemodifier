@@ -2,6 +2,7 @@ package valuemodifier
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
 		Input          string
 		Expected       string
 	}{
-		// Test case 1, a single modifier modifies all secrets.
+		// Test case 0, a single modifier modifies all secrets.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -39,7 +40,7 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
   "pass1": "pass1-modified1"
 }`,
 		},
-		// Test case 2, a single modifier modifies all numeric secrets.
+		// Test case 1, a single modifier modifies all numeric secrets.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -54,7 +55,7 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
   "pass1": "12345-modified1"
 }`,
 		},
-		// Test case 3, a single modifier modifies all secrets inside lists.
+		// Test case 2, a single modifier modifies all secrets inside lists.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -75,7 +76,7 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
   ]
 }`,
 		},
-		// Test case 4, a single modifier modifies all secrets, but ignores the ones
+		// Test case 3, a single modifier modifies all secrets, but ignores the ones
 		// configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -93,7 +94,7 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
   "pass1": "pass1-modified1"
 }`,
 		},
-		// Test case 5, multiple modifiers modify all secrets, but ignore the ones
+		// Test case 4, multiple modifiers modify all secrets, but ignore the ones
 		// configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -117,7 +118,7 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
   "pass2": "pass2-modified1-modified2"
 }`,
 		},
-		// Test case 6, nested blocks, multiple modifiers modify all secrets, but
+		// Test case 5, nested blocks, multiple modifiers modify all secrets, but
 		// ignore the ones configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -168,21 +169,23 @@ func Test_ValueModifier_Traverse_JSON(t *testing.T) {
 	}
 
 	for i, testCase := range testCases {
-		config := DefaultConfig()
-		config.ValueModifiers = testCase.ValueModifiers
-		config.IgnoreFields = testCase.IgnoreFields
-		newService, err := New(config)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			config := DefaultConfig()
+			config.ValueModifiers = testCase.ValueModifiers
+			config.IgnoreFields = testCase.IgnoreFields
+			newService, err := New(config)
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
 
-		output, err := newService.Traverse([]byte(testCase.Input))
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-		if string(output) != testCase.Expected {
-			t.Fatal("test", i+1, "expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
-		}
+			output, err := newService.Traverse([]byte(testCase.Input))
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
+			if string(output) != testCase.Expected {
+				t.Fatal("expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
+			}
+		})
 	}
 }
 
@@ -194,7 +197,7 @@ func Test_ValueModifier_Traverse_YAML(t *testing.T) {
 		Input          string
 		Expected       string
 	}{
-		// Test case 1, a single modifier modifies all secrets.
+		// Test case 0, a single modifier modifies all secrets.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -209,7 +212,7 @@ pass1: pass1-modified1
 `,
 		},
 
-		// Test case 2, a single modifier modifies all numeric secrets.
+		// Test case 1, a single modifier modifies all numeric secrets.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -224,7 +227,7 @@ pass1: 12345-modified1
 `,
 		},
 
-		// Test case 3, a single modifier modifies all secrets inside lists.
+		// Test case 2, a single modifier modifies all secrets inside lists.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -239,7 +242,7 @@ pass1: 12345-modified1
 `,
 		},
 
-		// Test case 4, a single modifier modifies all secrets, but ignores the ones
+		// Test case 3, a single modifier modifies all secrets, but ignores the ones
 		// configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -257,7 +260,7 @@ pass1: pass1-modified1
 `,
 		},
 
-		// Test case 5, multiple modifiers modify all secrets, but ignore the ones
+		// Test case 4, multiple modifiers modify all secrets, but ignore the ones
 		// configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -281,7 +284,7 @@ pass2: pass2-modified1-modified2
 `,
 		},
 
-		// Test case 6, nested blocks, multiple modifiers modify all secrets, but
+		// Test case 5, nested blocks, multiple modifiers modify all secrets, but
 		// ignore the ones configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -321,7 +324,7 @@ pass6: 123456-modified1-modified2
 `,
 		},
 
-		// Test case 7, modifiers modify string blocks.
+		// Test case 6, modifiers modify string blocks.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -339,7 +342,7 @@ pass6: 123456-modified1-modified2
 `,
 		},
 
-		// Test case 8, modifiers modify secrets of string blocks representing YAML.
+		// Test case 7, modifiers modify secrets of string blocks representing YAML.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -359,7 +362,7 @@ pass6: 123456-modified1-modified2
 `,
 		},
 
-		// Test case 9, modifiers modify secrets of string blocks representing JSON.
+		// Test case 8, modifiers modify secrets of string blocks representing JSON.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -387,7 +390,7 @@ pass6: 123456-modified1-modified2
 `,
 		},
 
-		// Test case 10, a single modifier modifies all secrets, but ignores the
+		// Test case 9, a single modifier modifies all secrets, but ignores the
 		// ones configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -414,7 +417,7 @@ pass2: pass2
 `,
 		},
 
-		// Test case 12, ensure a real config example for modifier modifies all secrets,
+		// Test case 10, ensure a real config example for modifier modifies all secrets,
 		// but ignores the ones configured using IgnoreFields.
 		{
 			ValueModifiers: []ValueModifier{
@@ -491,7 +494,7 @@ pass2: pass2
 `,
 		},
 
-		// Test case 13, ensure a real world example works with selected fields.
+		// Test case 11, ensure a real world example works with selected fields.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
@@ -544,21 +547,23 @@ pass2: pass2
 	}
 
 	for i, testCase := range testCases {
-		config := DefaultConfig()
-		config.ValueModifiers = testCase.ValueModifiers
-		config.IgnoreFields = testCase.IgnoreFields
-		config.SelectFields = testCase.SelectFields
-		newService, err := New(config)
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			config := DefaultConfig()
+			config.ValueModifiers = testCase.ValueModifiers
+			config.IgnoreFields = testCase.IgnoreFields
+			config.SelectFields = testCase.SelectFields
+			newService, err := New(config)
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
 
-		output, err := newService.Traverse([]byte(testCase.Input))
-		if err != nil {
-			t.Fatal("test", i+1, "expected", nil, "got", err)
-		}
-		if string(output) != testCase.Expected {
-			t.Fatal("test", i+1, "expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
-		}
+			output, err := newService.Traverse([]byte(testCase.Input))
+			if err != nil {
+				t.Fatal("expected", nil, "got", err)
+			}
+			if string(output) != testCase.Expected {
+				t.Fatal("expected", fmt.Sprintf("%q", testCase.Expected), "got", fmt.Sprintf("%q", output))
+			}
+		})
 	}
 }

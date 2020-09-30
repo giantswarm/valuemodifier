@@ -1,11 +1,11 @@
 module github.com/giantswarm/valuemodifier
 
-go 1.14
+go 1.15
 
 require (
-	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/giantswarm/microerror v0.2.0
+	github.com/ghodss/yaml v1.0.0
+	github.com/giantswarm/microerror v0.2.1
 	github.com/spf13/cast v1.3.0
-	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
-	gopkg.in/yaml.v2 v2.2.2
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
+	gopkg.in/yaml.v2 v2.3.0
 )
