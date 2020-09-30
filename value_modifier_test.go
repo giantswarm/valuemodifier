@@ -494,7 +494,7 @@ pass2: pass2
 `,
 		},
 
-		// Test case 12, ensure a real world example works with selected fields.
+		// Test case 11, ensure a real world example works with selected fields.
 		{
 			ValueModifiers: []ValueModifier{
 				testModifier1{},
