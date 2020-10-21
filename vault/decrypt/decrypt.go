@@ -12,7 +12,7 @@ import (
 // value modifier.
 type Config struct {
 	VaultClient *vaultclient.Client
-	KeyRingName string
+	Key         string
 }
 
 // DefaultConfig provides a default configuration to create a new vault
@@ -26,13 +26,13 @@ func New(config Config) (*Service, error) {
 	if config.VaultClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.VaultClient must be defined")
 	}
-	if config.KeyRingName == "" {
-		return nil, microerror.Maskf(invalidConfigError, "config.KeyRingName must be defined")
+	if config.Key == "" {
+		return nil, microerror.Maskf(invalidConfigError, "config.Key must be defined")
 
 	}
 	newService := &Service{
 		vaultClient: config.VaultClient,
-		keyring:     fmt.Sprintf("transit/decrypt/%s", config.KeyRingName),
+		keyring:     fmt.Sprintf("/v1/transit/decrypt/%s", config.Key),
 	}
 
 	return newService, nil
@@ -52,11 +52,13 @@ type vaultResponseData struct {
 	Plaintext string `json:"plaintext"`
 }
 
+type vaultRequest struct {
+	Ciphertext string `json:"ciphertext"`
+}
+
 func (s *Service) Modify(value []byte) ([]byte, error) {
 	request := s.vaultClient.NewRequest("POST", s.keyring)
-	err := request.SetJSONBody(
-		map[string]string{"ciphertext": string(value)},
-	)
+	err := request.SetJSONBody(vaultRequest{Ciphertext: string(value)})
 	if err != nil {
 		return []byte{}, microerror.Mask(err)
 	}
