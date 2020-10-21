@@ -8,7 +8,7 @@ import (
 	vaultclient "github.com/hashicorp/vault/api"
 )
 
-// Config represents the configuration used to create a new vault encoding
+// Config represents the configuration used to create a new vault encrypting
 // value modifier.
 type Config struct {
 	VaultClient *vaultclient.Client
@@ -16,12 +16,12 @@ type Config struct {
 }
 
 // DefaultConfig provides a default configuration to create a new vault
-// encoding value modifier by best effort.
+// encrypting value modifier by best effort.
 func DefaultConfig() Config {
 	return Config{}
 }
 
-// New creates a new configured vault encoding value modifier.
+// New creates a new configured vault encrypting value modifier.
 func New(config Config) (*Service, error) {
 	if config.VaultClient == nil {
 		return nil, microerror.Maskf(invalidConfigError, "config.VaultClient must be defined")
@@ -38,7 +38,7 @@ func New(config Config) (*Service, error) {
 	return newService, nil
 }
 
-// Service implements the vault encoding value modifier.
+// Service implements the vault encrypting value modifier.
 type Service struct {
 	vaultClient *vaultclient.Client
 	keyring     string
