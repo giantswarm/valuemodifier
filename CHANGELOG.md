@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add modifier for Hashicorp Vault transit secrets.
+
 ## [0.2.1] - 2020-09-30
 
 ### Changed
