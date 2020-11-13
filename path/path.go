@@ -122,7 +122,9 @@ func (s *Service) OutputBytes() ([]byte, error) {
 	b := s.jsonBytes
 	if !s.isJSON {
 		var err error
+		fmt.Printf("KUBA json: %q\n", string(s.jsonBytes))
 		b, err = yamltojson.JSONToYAML(b)
+		fmt.Printf("KUBA yaml: %q\n", string(b))
 		if err != nil {
 			return nil, microerror.Mask(err)
 		}
