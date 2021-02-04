@@ -177,6 +177,10 @@ func (s *Service) Validate(paths []string) error {
 }
 
 func (s *Service) allFromInterface(value interface{}) ([]string, error) {
+	if value == nil {
+		return nil, nil
+	}
+
 	// process map
 	{
 		stringMap, err := cast.ToStringMapE(value)
@@ -186,6 +190,11 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			var paths []string
 
 			for k, v := range stringMap {
+				if v == nil {
+					paths = append(paths, k)
+					continue
+				}
+
 				var ps []string
 				if reflect.TypeOf(v).String() != "string" {
 					ps, err = s.allFromInterface(v)
@@ -218,6 +227,9 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			var paths []string
 
 			for i, v := range slice {
+				if v == nil {
+					continue
+				}
 				ps, err := s.allFromInterface(v)
 				if err != nil {
 					return nil, microerror.Mask(err)
