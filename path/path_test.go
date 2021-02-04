@@ -497,6 +497,30 @@ k4:
 			Path:     "k.[10].k10",
 			Expected: "v10",
 		},
+
+		// Test case 20, ensure nil values are handled properly - explicit null
+		{
+			InputBytes: []byte(`
+k1:
+  k2: null
+`),
+			Path:     "k1.k2",
+			Expected: nil,
+		},
+
+		// Test case 21, ensure nil values are handled properly - empty value
+		{
+			InputBytes: []byte(`k1:`),
+			Path:       "k1",
+			Expected:   nil,
+		},
+
+		// Test case 22, ensure nil values are handled properly - null value in an array
+		{
+			InputBytes: []byte(`k1: [null]`),
+			Path:       "k1",
+			Expected:   []interface{}{nil},
+		},
 	}
 
 	for i, tc := range testCases {
