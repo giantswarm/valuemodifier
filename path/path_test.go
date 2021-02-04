@@ -214,6 +214,18 @@ func Test_Service_All(t *testing.T) {
 				"k1.k2.k3",
 			},
 		},
+
+		// Test case 14, ensure empty fields are handled (YAML standard allows for such fields).
+		{
+			InputBytes: []byte(`
+k1:
+  k2:
+k3: "v"
+k4: ["a", null "b"]
+k5: null
+`),
+			Expected: []string{"k1.k2", "k3", "k4", "k5"},
+		},
 	}
 
 	for i, tc := range testCases {
