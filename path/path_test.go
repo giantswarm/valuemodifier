@@ -214,6 +214,18 @@ func Test_Service_All(t *testing.T) {
 				"k1.k2.k3",
 			},
 		},
+
+		// Test case 14, ensure empty fields are handled (YAML standard allows for such fields).
+		{
+			InputBytes: []byte(`
+k1:
+  k2:
+k3: "v"
+k4: ["a", null "b"]
+k5: null
+`),
+			Expected: []string{"k1.k2", "k3", "k4", "k5"},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -484,6 +496,30 @@ k4:
 }`),
 			Path:     "k.[10].k10",
 			Expected: "v10",
+		},
+
+		// Test case 20, ensure nil values are handled properly - explicit null
+		{
+			InputBytes: []byte(`
+k1:
+  k2: null
+`),
+			Path:     "k1.k2",
+			Expected: nil,
+		},
+
+		// Test case 21, ensure nil values are handled properly - empty value
+		{
+			InputBytes: []byte(`k1:`),
+			Path:       "k1",
+			Expected:   nil,
+		},
+
+		// Test case 22, ensure nil values are handled properly - null value in an array
+		{
+			InputBytes: []byte(`k1: [null]`),
+			Path:       "k1",
+			Expected:   []interface{}{nil},
 		},
 	}
 
