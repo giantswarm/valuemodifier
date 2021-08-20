@@ -226,6 +226,15 @@ k5: null
 `),
 			Expected: []string{"k1.k2", "k3", "k4", "k5"},
 		},
+
+		// Test case 15, ensure array of objects is handled correctly.
+		{
+			InputBytes: []byte(`
+tolerations:
+- effect: NoSchedule
+`),
+			Expected: []string{"tolerations.[0].effect"},
+		},
 	}
 
 	for i, tc := range testCases {
