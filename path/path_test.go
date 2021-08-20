@@ -1102,6 +1102,20 @@ k4:
   }
 }`),
 		},
+
+		// Test case 27, ensure array of objects is handled correctly.
+		{
+			InputBytes: []byte(`
+tolerations: []
+`),
+			Path:  "tolerations.[0].effect",
+			Value: "NoSchedule",
+			Expected: []byte(`{
+  "tolerations": [
+	{"effect": "NoSchedule"},
+  ]
+}`),
+		},
 	}
 
 	for i, tc := range testCases {
