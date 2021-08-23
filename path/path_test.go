@@ -1157,7 +1157,7 @@ func Test_Service_Set_Error(t *testing.T) {
 		Path         string
 		ErrorMatcher func(error) bool
 	}{
-		// Test 1, when there is only 1 element in the list index [1] cannot be
+		// Test 1, when there is only 1 element in the list index [2] cannot be
 		// found.
 		{
 			InputBytes: []byte(`{
@@ -1167,7 +1167,7 @@ func Test_Service_Set_Error(t *testing.T) {
     }
   ]
 }`),
-			Path:         "k1.[1].k2",
+			Path:         "k1.[2].k2",
 			ErrorMatcher: IsNotFound,
 		},
 	}

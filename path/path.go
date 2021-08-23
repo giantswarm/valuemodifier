@@ -431,16 +431,24 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 				return nil, microerror.Mask(err)
 			}
 
-			if index >= len(slice) {
+			if index > len(slice) {
 				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
 
-			modified, err := s.setFromInterface(recPath, value, slice[index])
-			if err != nil {
-				return nil, microerror.Mask(err)
+			if index == len(slice) {
+				modified, err := s.setFromInterface(recPath, value, nil)
+				if err != nil {
+					return nil, microerror.Mask(err)
+				}
+				slice = append(slice, modified)
+			} else {
+				modified, err := s.setFromInterface(recPath, value, slice[index])
+				if err != nil {
+					return nil, microerror.Mask(err)
+				}
+				slice[index] = modified
 			}
-			slice[index] = modified
 
 			return slice, nil
 		}
