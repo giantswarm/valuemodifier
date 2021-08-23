@@ -22,6 +22,7 @@ const (
 
 var (
 	placeholderExpression = regexp.MustCompile(escapedSeparatorPlaceholder)
+	sliceIndexPattern     = regexp.MustCompile(`\[[0-9]+\]`)
 )
 
 // Config represents the configuration used to create a new path service.
@@ -369,8 +370,6 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 
 	// Create new element when the existing jsonStructure doesn't exist.
 	if jsonStructure == nil {
-		m := make(map[string]interface{})
-
 		// Just recurse when there are more components left in path with
 		// missing elements.
 		if len(split) > 1 {
@@ -382,9 +381,15 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 			}
 		}
 
-		m[key] = value
-
-		return m, nil
+		if isSliceIndex(key) {
+			result := []interface{}{}
+			result = append(result, value)
+			return result, nil
+		} else {
+			result := make(map[string]interface{})
+			result[key] = value
+			return result, nil
+		}
 	}
 
 	// process map
@@ -510,10 +515,12 @@ func containsString(list []string, item string) bool {
 	return false
 }
 
+func isSliceIndex(key string) bool {
+	return sliceIndexPattern.MatchString(key)
+}
+
 func indexFromKey(key string) (int, error) {
-	re := regexp.MustCompile(`\[[0-9]+\]`)
-	ok := re.MatchString(key)
-	if !ok {
+	if !isSliceIndex(key) {
 		return 0, microerror.Maskf(keyNotIndexError, key)
 	}
 
