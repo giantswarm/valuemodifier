@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix setting values in arrays.
+
 ## [0.3.1] - 2021-02-04
 
 ### Fixed
