@@ -226,6 +226,15 @@ k5: null
 `),
 			Expected: []string{"k1.k2", "k3", "k4", "k5"},
 		},
+
+		// Test case 15, ensure array of objects is handled correctly.
+		{
+			InputBytes: []byte(`
+tolerations:
+- effect: NoSchedule
+`),
+			Expected: []string{"tolerations.[0].effect"},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -1093,6 +1102,44 @@ k4:
   }
 }`),
 		},
+
+		// Test case 27, ensure array of objects is handled correctly.
+		{
+			InputBytes: []byte(`{
+"tolerations": [{}],
+}`),
+			Path:  "tolerations.[0].effect",
+			Value: "NoSchedule",
+			Expected: []byte(`tolerations:
+- effect: NoSchedule
+`),
+		},
+
+		// Test case 28, ensure array of objects is handled correctly.
+		{
+			InputBytes: []byte(`{
+"tolerations": [],
+}`),
+			Path:  "tolerations.[0].effect",
+			Value: "NoSchedule",
+			Expected: []byte(`tolerations:
+- effect: NoSchedule
+`),
+		},
+
+		// Test case 29, ensure array of objects is handled correctly.
+		{
+			InputBytes: []byte(`{}`),
+			Path:       "tolerations.[0].effect",
+			Value:      "NoSchedule",
+			Expected: []byte(`{
+  "tolerations": [
+    {
+      "effect": "NoSchedule"
+    }
+  ]
+}`),
+		},
 	}
 
 	for i, tc := range testCases {
@@ -1124,7 +1171,7 @@ func Test_Service_Set_Error(t *testing.T) {
 		Path         string
 		ErrorMatcher func(error) bool
 	}{
-		// Test 1, when there is only 1 element in the list index [1] cannot be
+		// Test 1, when there is only 1 element in the list index [2] cannot be
 		// found.
 		{
 			InputBytes: []byte(`{
@@ -1134,7 +1181,7 @@ func Test_Service_Set_Error(t *testing.T) {
     }
   ]
 }`),
-			Path:         "k1.[1].k2",
+			Path:         "k1.[2].k2",
 			ErrorMatcher: IsNotFound,
 		},
 	}
