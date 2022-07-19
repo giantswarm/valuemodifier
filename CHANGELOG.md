@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Migrate from golang.org/x/crypto to github.com/ProtonMail/go-crypto, see: https://golang.org/issue/44226.
+
 ## [0.4.0] - 2021-08-24
 
 ### Fixed
