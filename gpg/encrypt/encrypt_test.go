@@ -21,7 +21,7 @@ func Test_GPG_Encrypt_Service_Modify(t *testing.T) {
 
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-xxxxxxxxxxxxxx
+xxxxx
 -----END PGP SIGNATURE-----`) // "hello world"
 	value := []byte("hello world")
 	modified, err := newService.Modify(value)

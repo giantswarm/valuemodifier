@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io/ioutil"
 
+	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ProtonMail/go-crypto/openpgp/armor"
 	"github.com/giantswarm/microerror"
-	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
 )
 
 // Config represents the configuration used to create a new GPG decryption

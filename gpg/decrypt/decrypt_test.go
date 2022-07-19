@@ -15,10 +15,9 @@ func Test_GPG_Decrypt_Service_Modify(t *testing.T) {
 	expected := []byte("hello world")
 	value := []byte(`-----BEGIN PGP SIGNATURE-----
 
-wx4EBwMIbxESvPWYOgBgEmcsCe70T3fWYMXUAO/SBZHS4AHk6qQ8xikHnoCiBasb
-8HKnT+FFOOCN4P3hujrg8+I+yH/84GfjXeQwavZMLtTgAeGQ8eCB4GXgguSqXR+p
-l5T01NrWN5NQZM+H4ngibenh8GwA
-=C3bS
+wx4EBwMItflyy+CkVHfgNJ9CwJz0SXR8DVmT+GrIQpbSPAFfOlMN/2J8XF2/hRCm
+oHm+HyYpiGLqnC/rncq3SRJ9z0xSEbhS5l+Dp3xMTGniaNEU2xtt72M35kS+HA==
+=R5GK
 -----END PGP SIGNATURE-----`) // "hello world"
 	modified, err := newService.Modify(value)
 	if err != nil {
