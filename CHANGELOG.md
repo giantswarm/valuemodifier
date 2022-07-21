@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Migrate from golang.org/x/crypto to github.com/ProtonMail/go-crypto, see: https://golang.org/issue/44226.
+- Migrate from `golang.org/x/crypto` to `github.com/ProtonMail/go-crypto`, see: https://golang.org/issue/44226.
+- Update `github.com/hashicorp/vault/api` to `v1.7.2`
+- Use non-deprecated API calls to Vault to encrypt / decrypt secrets
 
 ## [0.4.0] - 2021-08-24
 
