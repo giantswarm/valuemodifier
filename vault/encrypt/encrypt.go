@@ -47,7 +47,7 @@ type Service struct {
 func (s *Service) Modify(value []byte) ([]byte, error) {
 	base64Encoded := base64.StdEncoding.EncodeToString(value)
 
-	cipherText, err := s.encrypt(base64Encoded)
+	cipherText, err := s.Encrypt(base64Encoded)
 	if err != nil {
 		return []byte{}, microerror.Mask(err)
 	}
@@ -55,7 +55,7 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 	return []byte(cipherText), nil
 }
 
-func (s *Service) encrypt(plainText string) (string, error) {
+func (s *Service) Encrypt(plainText string) (string, error) {
 	secret, err := s.vaultClient.Logical().Write(s.path, map[string]interface{}{
 		"plaintext": plainText,
 	})
