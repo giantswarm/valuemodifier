@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-07-21
+
 ### Changed
 
 - Migrate from `golang.org/x/crypto` to `github.com/ProtonMail/go-crypto`, see: https://golang.org/issue/44226.
@@ -50,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added CHANGELOG.md
 
-[Unreleased]: https://github.com/giantswarm/valuemodifier/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/giantswarm/valuemodifier/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/giantswarm/valuemodifier/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/giantswarm/valuemodifier/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/giantswarm/valuemodifier/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/giantswarm/valuemodifier/compare/v0.2.1...v0.3.0
