@@ -32,7 +32,7 @@ func New(config Config) (*Service, error) {
 	}
 	newService := &Service{
 		vaultClient: config.VaultClient,
-		keyring:     fmt.Sprintf("/v1/transit/encrypt/%s", config.Key),
+		path:        fmt.Sprintf("/transit/encrypt/%s", config.Key),
 	}
 
 	return newService, nil
@@ -41,44 +41,28 @@ func New(config Config) (*Service, error) {
 // Service implements the vault encrypting value modifier.
 type Service struct {
 	vaultClient *vaultclient.Client
-	keyring     string
-}
-
-type vaultResponse struct {
-	Data vaultResponseData `json:"data"`
-}
-
-type vaultResponseData struct {
-	Ciphertext string `json:"ciphertext"`
-}
-
-type vaultRequest struct {
-	Plaintext string `json:"plaintext"`
+	path        string
 }
 
 func (s *Service) Modify(value []byte) ([]byte, error) {
-	request := s.vaultClient.NewRequest("POST", s.keyring)
-
 	base64Encoded := base64.StdEncoding.EncodeToString(value)
-	err := request.SetJSONBody(vaultRequest{Plaintext: base64Encoded})
-	if err != nil {
-		return []byte{}, microerror.Mask(err)
-	}
-	response, err := s.vaultClient.RawRequest(request)
 
+	cipherText, err := s.encrypt(base64Encoded)
 	if err != nil {
 		return []byte{}, microerror.Mask(err)
 	}
 
-	if response.StatusCode != 200 {
-		return []byte{}, microerror.Maskf(vaultResponseError, "expected 200 response, got %d", response.StatusCode)
-	}
+	return []byte(cipherText), nil
+}
 
-	content := vaultResponse{}
-	err = response.DecodeJSON(&content)
+func (s *Service) encrypt(plainText string) (string, error) {
+	secret, err := s.vaultClient.Logical().Write(s.path, map[string]interface{}{
+		"plaintext": plainText,
+	})
+
 	if err != nil {
-		return []byte{}, microerror.Mask(err)
+		return "", microerror.Mask(err)
 	}
 
-	return []byte(content.Data.Ciphertext), nil
+	return fmt.Sprintf("%v", secret.Data["ciphertext"]), nil
 }
