@@ -1265,3 +1265,94 @@ func Test_Service_Validate(t *testing.T) {
 		}
 	}
 }
+
+func Test_setFromInterface(t *testing.T) {
+	testCases := []struct {
+		description string
+		path        string
+		value       interface{}
+		input       interface{}
+		expected    interface{}
+	}{
+		{
+			"case 1: simple json",
+			"a.b.d",
+			"bar",
+			map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{
+						"d": "foo",
+						"e": 42,
+					},
+					"c": "dummy",
+				},
+				"x": "y",
+			},
+			map[string]interface{}{
+				"a": map[string]interface{}{
+					"b": map[string]interface{}{
+						"d": "bar",
+						"e": 42,
+					},
+					"c": "dummy",
+				},
+				"x": "y",
+			},
+		},
+		{
+			"case 2: field name with dots in root",
+			"test%%PLACEHOLDER%%name",
+			"baz",
+			map[string]interface{}{
+				"test.name": "foo",
+				"annotations": map[string]interface{}{
+					"foo": "bar",
+				},
+			},
+			map[string]interface{}{
+				"test.name": "baz",
+				"annotations": map[string]interface{}{
+					"foo": "bar",
+				},
+			},
+		},
+		{
+			"case 3: field name with dots nested",
+			"annotations.test%%PLACEHOLDER%%name",
+			"bar",
+			map[string]interface{}{
+				"annotations": map[string]interface{}{
+					"test.name": "foo",
+					"foo":       "bar",
+				},
+			},
+			map[string]interface{}{
+				"annotations": map[string]interface{}{
+					"test.name": "bar",
+					"foo":       "bar",
+				},
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		config := DefaultConfig()
+		config.InputBytes = []byte{}
+		newService, err := New(config)
+
+		if err != nil {
+			t.Fatal("test", i+1, "expected", nil, "got", err)
+		}
+
+		// The  JSON structure in an in/out parameter, modified as the side effect of the function
+		_, err = newService.setFromInterface(tc.path, tc.value, tc.input)
+
+		if err != nil {
+			t.Fatalf("%s: expected no errors, got: %+v", tc.description, err)
+		}
+
+		if !reflect.DeepEqual(tc.input, tc.expected) {
+			t.Fatalf("%s: the updated JSON does not match the expected object, expected: %+v, got: %+v", tc.description, tc.expected, tc.input)
+		}
+	}
+}
