@@ -408,7 +408,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 				// fall through
 			} else {
 				if len(split) == 1 {
-					stringMap[path] = value
+					stringMap[key] = value
 					return stringMap, nil
 				} else {
 					recPath := strings.Join(split[1:], s.separator)
