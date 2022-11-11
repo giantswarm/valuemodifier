@@ -474,7 +474,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 			// Empty `recPath` here means the slice does not contain object under given index, since the
 			// further path is empty, i.e. index is of the `[N]` form instead of the `[N].k1.k2...`
 			// form. If we go further with processing in such case, the path will become empty,
-			// and hence the key, and we will end up adding a `{"": modified}` object to the index,
+			// and hence the key, and we will end up adding a `[{"": modified}]` object to the index,
 			// see the `Create new element when the existing jsonStructure doesn't exist.` part of this
 			// function.
 			// We instead use the empty `recPath` as an indicator we are processing regular types here,
