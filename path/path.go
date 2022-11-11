@@ -588,20 +588,6 @@ func isYAMLObject(b []byte) bool {
 	return yaml.Unmarshal(b, &m) == nil && !bytes.HasPrefix(b, []byte("-"))
 }
 
-func sanitizeSlice(s []interface{}) []interface{} {
-	sn := make([]interface{}, 0, len(s))
-
-	for _, v := range s {
-		if v == nil {
-			continue
-		}
-
-		sn = append(sn, v)
-	}
-
-	return sn
-}
-
 func toJSON(b []byte) ([]byte, bool, error) {
 	if isJSON(b) {
 		return b, true, nil
