@@ -235,6 +235,15 @@ tolerations:
 `),
 			Expected: []string{"tolerations.[0].effect"},
 		},
+		// Test case 16, ensure slice is handled correctly.
+		{
+			InputBytes: []byte(`
+k1:
+- k2
+- k3
+`),
+			Expected: []string{"k1"},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -529,6 +538,14 @@ k1:
 			InputBytes: []byte(`k1: [null]`),
 			Path:       "k1",
 			Expected:   []interface{}{nil},
+		},
+		// Test case 23, ensure slice is returned correctly by get
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3`),
+			Path:     "k1",
+			Expected: []interface{}{"k2", "k3"},
 		},
 	}
 
@@ -1138,6 +1155,30 @@ k4:
       "effect": "NoSchedule"
     }
   ]
+}`),
+		},
+		// Test case 30, ensure slice is handled correctly (YAML)
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3`),
+			Path:  "k1",
+			Value: "modified",
+			Expected: []byte(`k1: modified
+`),
+		},
+		// Test case 30, ensure slice is handled correctly (JSON)
+		{
+			InputBytes: []byte(`{
+  "k1": [
+    "k2",
+	"k3"
+  ]
+}`),
+			Path:  "k1",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": "modified"
 }`),
 		},
 	}

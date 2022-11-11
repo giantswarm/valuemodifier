@@ -544,6 +544,19 @@ pass2: pass2
             }
 `,
 		},
+		// Test case 12, modifier operating on a slice
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			SelectFields: []string{},
+			Input: `k1:
+- k2
+- k3`,
+			Expected: `k1: -modified1
+`,
+		},
 	}
 
 	for i, testCase := range testCases {
