@@ -18,6 +18,7 @@ import (
 
 const (
 	escapedSeparatorPlaceholder = "%%PLACEHOLDER%%"
+	nullValue                   = "null"
 )
 
 var (
@@ -228,6 +229,9 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			var paths []string
 
 			for i, v := range slice {
+				// A consequence of this is, when `null` is part of the slice, it is
+				// not going to be returned as a path, which is ok, because `null` is
+				// not something that we must necessarily process.
 				if v == nil {
 					continue
 				}
@@ -238,6 +242,13 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 
 				for _, p := range ps {
 					paths = append(paths, fmt.Sprintf("[%d]%s%s", i, s.separator, p))
+				}
+
+				// If `ps` is nil it means slice element is not an object, so instead
+				// of processing a slice as a whole, let's add its elements to the paths
+				// one by one and process them separately.
+				if ps == nil {
+					paths = append(paths, fmt.Sprintf("[%d]", i))
 				}
 			}
 
@@ -325,7 +336,6 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
-
 			v, err := s.getFromInterface(recPath, slice[index])
 			if err != nil {
 				return nil, microerror.Mask(err)
@@ -341,9 +351,19 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 		if err != nil {
 			// fall through
 		} else {
+			// the string can be either empty or may not carry a valid JSON object,
+			// what can happen when processing `null` and "usual" types of values, like
+			// strings, respectively.
 			jsonBytes, _, err := toJSON([]byte(str))
 			if err != nil {
-				// fall through
+				// If that's not a JSON object we can use it as a weak indicator of
+				// processing regular string.
+				return str, nil
+			} else if string(jsonBytes) == nullValue {
+				// Empty string on JSON conversion gives `null` that is a valid "object".
+				// Unmarshaling it won't return an error, and in result `getFromInterface`
+				// will be run again and again for it.
+				return string(jsonBytes), nil
 			} else {
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
@@ -439,7 +459,21 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 			if index > len(slice) {
 				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
+
 			recPath := strings.Join(split[1:], s.separator)
+
+			// Empty `recPath` here means the slice does not contain objects, since the
+			// further path is empty, so instead going further we either modify the value
+			// under given index, or append value, and move forward
+			if recPath == "" && index == len(slice) {
+				slice = append(slice, value)
+				return slice, nil
+			}
+
+			if recPath == "" {
+				slice[index] = value
+				return slice, nil
+			}
 
 			if index == len(slice) {
 				modified, err := s.setFromInterface(recPath, value, nil)
@@ -452,6 +486,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 				if err != nil {
 					return nil, microerror.Mask(err)
 				}
+
 				slice[index] = modified
 			}
 
@@ -467,7 +502,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 		} else {
 			jsonBytes, isJSON, err := toJSON([]byte(str))
 			if err != nil {
-				// fall through
+				return value, nil
 			} else {
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
@@ -551,6 +586,20 @@ func isYAMLList(b []byte) bool {
 func isYAMLObject(b []byte) bool {
 	var m map[interface{}]interface{}
 	return yaml.Unmarshal(b, &m) == nil && !bytes.HasPrefix(b, []byte("-"))
+}
+
+func sanitizeSlice(s []interface{}) []interface{} {
+	sn := make([]interface{}, 0, len(s))
+
+	for _, v := range s {
+		if v == nil {
+			continue
+		}
+
+		sn = append(sn, v)
+	}
+
+	return sn
 }
 
 func toJSON(b []byte) ([]byte, bool, error) {

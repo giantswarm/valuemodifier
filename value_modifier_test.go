@@ -554,7 +554,45 @@ pass2: pass2
 			Input: `k1:
 - k2
 - k3`,
-			Expected: `k1: -modified1
+			Expected: `k1:
+- k2-modified1
+- k3-modified1
+`,
+		},
+		// Test case 13, modifier operating on a slice, mixed values
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			SelectFields: []string{},
+			Input: `k1:
+- k2
+- k3
+- 8080`,
+			Expected: `k1:
+- k2-modified1
+- k3-modified1
+- 8080-modified1
+`,
+		},
+		// Test case 14, modifier operating on a slice, null
+		{
+			ValueModifiers: []ValueModifier{
+				testModifier1{},
+			},
+			IgnoreFields: []string{},
+			SelectFields: []string{},
+			Input: `k1:
+- k2
+- k3
+- null
+- 8080`,
+			Expected: `k1:
+- k2-modified1
+- k3-modified1
+- null
+- 8080-modified1
 `,
 		},
 	}

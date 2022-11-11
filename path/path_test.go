@@ -1,6 +1,7 @@
 package path
 
 import (
+	//"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -221,10 +222,10 @@ func Test_Service_All(t *testing.T) {
 k1:
   k2:
 k3: "v"
-k4: ["a", null "b"]
+k4: ["a", null, "b"]
 k5: null
 `),
-			Expected: []string{"k1.k2", "k3", "k4", "k5"},
+			Expected: []string{"k1.k2", "k3", "k4.[0]", "k4.[2]", "k5"},
 		},
 
 		// Test case 15, ensure array of objects is handled correctly.
@@ -238,11 +239,11 @@ tolerations:
 		// Test case 16, ensure slice is handled correctly.
 		{
 			InputBytes: []byte(`
-k1:
-- k2
-- k3
+args:
+- arg1
+- arg2
 `),
-			Expected: []string{"k1"},
+			Expected: []string{"args.[0]", "args.[1]"},
 		},
 	}
 
@@ -544,8 +545,26 @@ k1:
 			InputBytes: []byte(`k1:
 - k2
 - k3`),
-			Path:     "k1",
-			Expected: []interface{}{"k2", "k3"},
+			Path:     "k1.[0]",
+			Expected: "k2",
+		},
+		// Test case 24, ensure slice is returned correctly by get; mixed types
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- 8080`),
+			Path:     "k1.[2]",
+			Expected: "8080",
+		},
+		// Test case 25, ensure slice is returned correctly by get; null case
+		{
+			InputBytes: []byte(`k1:
+- k2
+- null
+- 8080`),
+			Path:     "k1.[1]",
+			Expected: "null",
 		},
 	}
 
@@ -561,6 +580,7 @@ k1:
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
+		//fmt.Println(reflect.TypeOf(tc.Expected), reflect.TypeOf(output))
 		if !reflect.DeepEqual(tc.Expected, output) {
 			t.Fatal("test", i+1, "expected", tc.Expected, "got", output)
 		}
@@ -1162,12 +1182,14 @@ k4:
 			InputBytes: []byte(`k1:
 - k2
 - k3`),
-			Path:  "k1",
+			Path:  "k1.[0]",
 			Value: "modified",
-			Expected: []byte(`k1: modified
+			Expected: []byte(`k1:
+- modified
+- k3
 `),
 		},
-		// Test case 30, ensure slice is handled correctly (JSON)
+		// Test case 31, ensure slice is handled correctly (JSON)
 		{
 			InputBytes: []byte(`{
   "k1": [
@@ -1175,11 +1197,28 @@ k4:
 	"k3"
   ]
 }`),
-			Path:  "k1",
+			Path:  "k1.[1]",
 			Value: "modified",
 			Expected: []byte(`{
-  "k1": "modified"
+  "k1": [
+    "k2",
+    "modified"
+  ]
 }`),
+		},
+		// Test case 32, ensure slice is handled correctly, with null
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- null`),
+			Path:  "k1.[2]",
+			Value: "modified",
+			Expected: []byte(`k1:
+- k2
+- k3
+- modified
+`),
 		},
 	}
 
