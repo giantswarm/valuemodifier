@@ -1,7 +1,6 @@
 package path
 
 import (
-	//"fmt"
 	"reflect"
 	"strconv"
 	"testing"
@@ -244,6 +243,16 @@ args:
 - arg2
 `),
 			Expected: []string{"args.[0]", "args.[1]"},
+		},
+		// Test case 17, ensure slice is handled correctly, mixed elements
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3: heh
+`),
+			Expected: []string{"args.[0]", "args.[1]", "args.[2].arg3"},
 		},
 	}
 
@@ -565,6 +574,24 @@ k1:
 - 8080`),
 			Path:     "k1.[1]",
 			Expected: "null",
+		},
+		// Test case 26, ensure slice is returned correctly by get; strings mixed with objects; get object
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- k4: value`),
+			Path:     "k1.[2].k4",
+			Expected: "value",
+		},
+		// Test case 27, ensure slice is returned correctly by get; strings mixed with objects; get string
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- k4: value`),
+			Path:     "k1.[1]",
+			Expected: "k3",
 		},
 	}
 
