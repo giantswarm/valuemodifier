@@ -254,6 +254,31 @@ args:
 `),
 			Expected: []string{"args.[0]", "args.[1]", "args.[2].arg3"},
 		},
+		// Test case 18, ensure slice is handled correctly, even more mixed elements
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3:
+    a1: v1
+    a2:
+    - b1
+    - b2: v2
+    - b3:
+      - c1
+      - c2
+`),
+			Expected: []string{
+				"args.[0]",
+				"args.[1]",
+				"args.[2].arg3.a1",
+				"args.[2].arg3.a2.[0]",
+				"args.[2].arg3.a2.[1].b2",
+				"args.[2].arg3.a2.[2].b3.[0]",
+				"args.[2].arg3.a2.[2].b3.[1]",
+			},
+		},
 	}
 
 	for i, tc := range testCases {
@@ -592,6 +617,40 @@ k1:
 - k4: value`),
 			Path:     "k1.[1]",
 			Expected: "k3",
+		},
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3:
+    a1: v1
+    a2:
+    - b1
+    - b2: v2
+    - b3:
+      - c1
+      - c2
+`),
+			Path:     "args.[2].arg3.a2.[1].b2",
+			Expected: "v2",
+		},
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3:
+    a1: v1
+    a2:
+    - b1
+    - b2: v2
+    - b3:
+      - c1
+      - c2
+`),
+			Path:     "args.[2].arg3.a2.[2].b3.[0]",
+			Expected: "c1",
 		},
 	}
 
