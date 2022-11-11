@@ -607,7 +607,6 @@ k1:
 		if err != nil {
 			t.Fatal("test", i+1, "expected", nil, "got", err)
 		}
-		//fmt.Println(reflect.TypeOf(tc.Expected), reflect.TypeOf(output))
 		if !reflect.DeepEqual(tc.Expected, output) {
 			t.Fatal("test", i+1, "expected", tc.Expected, "got", output)
 		}
