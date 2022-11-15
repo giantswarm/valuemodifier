@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Modify slice items one by one to prevent loosing the slice content.
+
 ## [0.5.1] - 2022-11-10
 
 ### Fixed

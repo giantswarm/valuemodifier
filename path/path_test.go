@@ -221,10 +221,10 @@ func Test_Service_All(t *testing.T) {
 k1:
   k2:
 k3: "v"
-k4: ["a", null "b"]
+k4: ["a", null, "b"]
 k5: null
 `),
-			Expected: []string{"k1.k2", "k3", "k4", "k5"},
+			Expected: []string{"k1.k2", "k3", "k4.[0]", "k4.[2]", "k5"},
 		},
 
 		// Test case 15, ensure array of objects is handled correctly.
@@ -234,6 +234,50 @@ tolerations:
 - effect: NoSchedule
 `),
 			Expected: []string{"tolerations.[0].effect"},
+		},
+		// Test case 16, ensure slice is handled correctly.
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+`),
+			Expected: []string{"args.[0]", "args.[1]"},
+		},
+		// Test case 17, ensure slice is handled correctly, mixed elements
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3: heh
+`),
+			Expected: []string{"args.[0]", "args.[1]", "args.[2].arg3"},
+		},
+		// Test case 18, ensure slice is handled correctly, even more mixed elements
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3:
+    a1: v1
+    a2:
+    - b1
+    - b2: v2
+    - b3:
+      - c1
+      - c2
+`),
+			Expected: []string{
+				"args.[0]",
+				"args.[1]",
+				"args.[2].arg3.a1",
+				"args.[2].arg3.a2.[0]",
+				"args.[2].arg3.a2.[1].b2",
+				"args.[2].arg3.a2.[2].b3.[0]",
+				"args.[2].arg3.a2.[2].b3.[1]",
+			},
 		},
 	}
 
@@ -529,6 +573,84 @@ k1:
 			InputBytes: []byte(`k1: [null]`),
 			Path:       "k1",
 			Expected:   []interface{}{nil},
+		},
+		// Test case 23, ensure slice is returned correctly by get
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3`),
+			Path:     "k1.[0]",
+			Expected: "k2",
+		},
+		// Test case 24, ensure slice is returned correctly by get; mixed types
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- 8080`),
+			Path:     "k1.[2]",
+			Expected: "8080",
+		},
+		// Test case 25, ensure slice is returned correctly by get; null case
+		{
+			InputBytes: []byte(`k1:
+- k2
+- null
+- 8080`),
+			Path:     "k1.[1]",
+			Expected: "null",
+		},
+		// Test case 26, ensure slice is returned correctly by get; strings mixed with objects; get object
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- k4: value`),
+			Path:     "k1.[2].k4",
+			Expected: "value",
+		},
+		// Test case 27, ensure slice is returned correctly by get; strings mixed with objects; get string
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- k4: value`),
+			Path:     "k1.[1]",
+			Expected: "k3",
+		},
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3:
+    a1: v1
+    a2:
+    - b1
+    - b2: v2
+    - b3:
+      - c1
+      - c2
+`),
+			Path:     "args.[2].arg3.a2.[1].b2",
+			Expected: "v2",
+		},
+		{
+			InputBytes: []byte(`
+args:
+- arg1
+- arg2
+- arg3:
+    a1: v1
+    a2:
+    - b1
+    - b2: v2
+    - b3:
+      - c1
+      - c2
+`),
+			Path:     "args.[2].arg3.a2.[2].b3.[0]",
+			Expected: "c1",
 		},
 	}
 
@@ -1139,6 +1261,49 @@ k4:
     }
   ]
 }`),
+		},
+		// Test case 30, ensure slice is handled correctly (YAML)
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3`),
+			Path:  "k1.[0]",
+			Value: "modified",
+			Expected: []byte(`k1:
+- modified
+- k3
+`),
+		},
+		// Test case 31, ensure slice is handled correctly (JSON)
+		{
+			InputBytes: []byte(`{
+  "k1": [
+    "k2",
+	"k3"
+  ]
+}`),
+			Path:  "k1.[1]",
+			Value: "modified",
+			Expected: []byte(`{
+  "k1": [
+    "k2",
+    "modified"
+  ]
+}`),
+		},
+		// Test case 32, ensure slice is handled correctly, with null
+		{
+			InputBytes: []byte(`k1:
+- k2
+- k3
+- null`),
+			Path:  "k1.[2]",
+			Value: "modified",
+			Expected: []byte(`k1:
+- k2
+- k3
+- modified
+`),
 		},
 	}
 

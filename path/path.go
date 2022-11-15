@@ -18,6 +18,7 @@ import (
 
 const (
 	escapedSeparatorPlaceholder = "%%PLACEHOLDER%%"
+	nullValue                   = "null"
 )
 
 var (
@@ -228,12 +229,28 @@ func (s *Service) allFromInterface(value interface{}) ([]string, error) {
 			var paths []string
 
 			for i, v := range slice {
+				// A consequence of this is, when `null` is part of the slice it is
+				// not going to be returned as a path, which is ok, because `null` is
+				// not something that we must necessarily process. We could drop the `null`
+				// alltogether, but this would require changing the original object,
+				// which does not seem necessary.
 				if v == nil {
 					continue
 				}
 				ps, err := s.allFromInterface(v)
 				if err != nil {
 					return nil, microerror.Mask(err)
+				}
+
+				// Since strings processing, see `process string`, expects objects as slice
+				// elements, it returns and empty result otherwise, i.e. when given slice element
+				// is "usual" data type. If we leave it like this, we get the whole slince under
+				// the path.
+				// Instead of processing a slice as a whole, let's add its elements as standalone
+				// paths.
+				if ps == nil {
+					paths = append(paths, fmt.Sprintf("[%d]", i))
+					continue
 				}
 
 				for _, p := range ps {
@@ -325,7 +342,6 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
 			recPath := strings.Join(split[1:], s.separator)
-
 			v, err := s.getFromInterface(recPath, slice[index])
 			if err != nil {
 				return nil, microerror.Mask(err)
@@ -341,9 +357,21 @@ func (s *Service) getFromInterface(path string, jsonStructure interface{}) (inte
 		if err != nil {
 			// fall through
 		} else {
+			// So far we have rather expected objects to be passed by the structure.
+			// The structure however can be either empty or may not carry a valid JSON object,
+			// what can happen when processing array and its `null` and "usual" types of values
+			// instead of objects, like strings, respectively.
 			jsonBytes, _, err := toJSON([]byte(str))
 			if err != nil {
-				// fall through
+				// If that's not a JSON object we can use it as an indicator of
+				// processing regular string. This is necessary, because otherwise
+				// we fall through and loose the value.
+				return str, nil
+			} else if string(jsonBytes) == nullValue {
+				// Empty string on JSON conversion gives `null` that is a valid "object".
+				// Unmarshaling it won't return an error, and in result `getFromInterface`
+				// will be run again and again trying to process the `null` object in a loop.
+				return string(jsonBytes), nil
 			} else {
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
@@ -439,7 +467,26 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 			if index > len(slice) {
 				return nil, microerror.Maskf(notFoundError, "key '%s'", key)
 			}
+
 			recPath := strings.Join(split[1:], s.separator)
+
+			// At this point we are processing indices of the slice, i.e. the `[N]...` sub-paths.
+			// Empty `recPath` here means the slice does not contain object under given index, since the
+			// further path is empty, i.e. index is of the `[N]` form instead of the `[N].k1.k2...`
+			// form. If we go further with processing in such case, the path will become empty,
+			// and hence the key, and we will end up adding a `[{"": modified}]` object to the index,
+			// see the `Create new element when the existing jsonStructure doesn't exist.` part of this
+			// function.
+			// We instead use the empty `recPath` as an indicator we are processing regular types here,
+			// so we either append the value or replace the existing value with the new one.
+			if recPath == "" && index == len(slice) {
+				slice = append(slice, value)
+				return slice, nil
+			}
+			if recPath == "" {
+				slice[index] = value
+				return slice, nil
+			}
 
 			if index == len(slice) {
 				modified, err := s.setFromInterface(recPath, value, nil)
@@ -452,6 +499,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 				if err != nil {
 					return nil, microerror.Mask(err)
 				}
+
 				slice[index] = modified
 			}
 
@@ -467,7 +515,7 @@ func (s *Service) setFromInterface(path string, value interface{}, jsonStructure
 		} else {
 			jsonBytes, isJSON, err := toJSON([]byte(str))
 			if err != nil {
-				// fall through
+				return value, nil
 			} else {
 				var jsonStructure interface{}
 				err := json.Unmarshal(jsonBytes, &jsonStructure)
