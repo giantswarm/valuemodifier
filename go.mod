@@ -8,7 +8,7 @@ require (
 	github.com/giantswarm/microerror v0.4.0
 	github.com/hashicorp/vault/api v1.10.0
 	github.com/spf13/cast v1.5.1
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -35,4 +35,5 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
