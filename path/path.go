@@ -13,7 +13,7 @@ import (
 	yamltojson "github.com/ghodss/yaml"
 	"github.com/giantswarm/microerror"
 	"github.com/spf13/cast"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 const (
