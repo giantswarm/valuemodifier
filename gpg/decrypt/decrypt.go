@@ -2,7 +2,7 @@ package decrypt
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
@@ -73,7 +73,7 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	b, err := ioutil.ReadAll(details.UnverifiedBody)
+	b, err := io.ReadAll(details.UnverifiedBody)
 	if err != nil {
 		return nil, microerror.Mask(err)
 	}
