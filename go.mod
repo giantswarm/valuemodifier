@@ -6,7 +6,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/giantswarm/microerror v0.4.1
-	github.com/hashicorp/vault/api v1.12.2
+	github.com/hashicorp/vault/api v1.13.0
 	github.com/spf13/cast v1.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -14,7 +14,7 @@ require (
 require (
 	github.com/cenkalti/backoff/v3 v3.2.2 // indirect
 	github.com/cloudflare/circl v1.3.6 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-hclog v1.2.1 // indirect
