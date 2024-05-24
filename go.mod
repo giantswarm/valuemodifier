@@ -6,7 +6,7 @@ require (
 	github.com/ProtonMail/go-crypto v1.0.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/giantswarm/microerror v0.4.1
-	github.com/hashicorp/vault/api v1.13.0
+	github.com/hashicorp/vault/api v1.14.0
 	github.com/spf13/cast v1.6.0
 	gopkg.in/yaml.v3 v3.0.1
 )
