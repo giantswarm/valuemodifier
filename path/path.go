@@ -569,7 +569,7 @@ func isSliceIndex(key string) bool {
 
 func indexFromKey(key string) (int, error) {
 	if !isSliceIndex(key) {
-		return 0, microerror.Maskf(keyNotIndexError, key)
+		return 0, microerror.Maskf(keyNotIndexError, "%s", key)
 	}
 
 	s := key[1 : len(key)-1]
