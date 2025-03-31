@@ -67,8 +67,15 @@ func (s *Service) Modify(value []byte) ([]byte, error) {
 		return nil, microerror.Mask(err)
 	}
 
-	encrypter.Close()
-	encoder.Close()
+	err = encrypter.Close()
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
+
+	err = encoder.Close()
+	if err != nil {
+		return nil, microerror.Mask(err)
+	}
 
 	return buf.Bytes(), nil
 }
