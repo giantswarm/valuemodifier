@@ -165,7 +165,7 @@ func (s *Service) Validate(paths []string) error {
 
 	for _, p := range paths {
 		fields := trimmedAll
-		if strings.Index(p, ".") != -1 { // nolint:gosimple
+		if strings.Contains(p, ".") {
 			fields = all
 		}
 		if containsString(fields, p) {
