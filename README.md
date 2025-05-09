@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/giantswarm/valuemodifier.svg?&style=shield&circle-token=2f991b43e9c0147771ebe0575885501a7184dea9)](https://circleci.com/gh/giantswarm/valuemodifier)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/giantswarm/valuemodifier/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/giantswarm/valuemodifier/tree/main)
 
 # valuemodifier
 Package valuemodifier provides an interface to modify values of arbitrary
