@@ -3,7 +3,7 @@ module github.com/giantswarm/valuemodifier
 go 1.24
 
 require (
-	github.com/ProtonMail/go-crypto v1.2.0
+	github.com/ProtonMail/go-crypto v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/giantswarm/microerror v0.4.1
 	github.com/hashicorp/vault/api v1.16.0
