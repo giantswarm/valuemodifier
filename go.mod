@@ -7,7 +7,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/giantswarm/microerror v0.4.1
 	github.com/hashicorp/vault/api v1.20.0
-	github.com/spf13/cast v1.9.2
+	github.com/spf13/cast v1.10.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
