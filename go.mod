@@ -36,4 +36,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace golang.org/x/net => golang.org/x/net v0.44.0
+replace golang.org/x/net => golang.org/x/net v0.45.0
