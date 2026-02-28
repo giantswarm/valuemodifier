@@ -1,6 +1,6 @@
 module github.com/giantswarm/valuemodifier
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/ProtonMail/go-crypto v1.3.0
@@ -36,4 +36,4 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace golang.org/x/net => golang.org/x/net v0.50.0
+replace golang.org/x/net => golang.org/x/net v0.51.0
