@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update module github.com/ProtonMail/go-crypto to v1.4.1
+- Update module github.com/hashicorp/vault/api to v1.22.0
+- Update module github.com/spf13/cast to v1.10.0
 
 ## [0.5.3] - 2025-06-03
 
