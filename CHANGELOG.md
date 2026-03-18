@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.4] - 2026-03-18
 
+### Changed
+
+- Update module github.com/ProtonMail/go-crypto to v1.4.1
+
 ## [0.5.3] - 2025-06-03
 
 - Minor code changes
