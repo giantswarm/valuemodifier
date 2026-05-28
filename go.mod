@@ -37,3 +37,5 @@ require (
 )
 
 replace golang.org/x/net => golang.org/x/net v0.53.0
+
+replace github.com/cloudflare/circl v1.6.2 => github.com/cloudflare/circl v1.6.3
