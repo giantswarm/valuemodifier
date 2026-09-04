@@ -37,3 +37,10 @@ require (
 )
 
 replace golang.org/x/net => golang.org/x/net v0.55.0
+
+replace (
+	golang.org/x/mod v0.35.0 => golang.org/x/mod v0.40.0
+	golang.org/x/mod v0.38.0 => golang.org/x/mod v0.40.0
+)
+
+replace golang.org/x/text v0.37.0 => golang.org/x/text v0.41.0
