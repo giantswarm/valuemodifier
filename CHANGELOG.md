@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Make pre-commit pass with `golangci-lint` 2.15.0: exclude `goconst` from test files.
+
 ## [0.5.4] - 2026-03-18
 
 ### Changed
