@@ -1,8 +1,3 @@
-CVE-2026-46600 until=2026-11-11 # golang.org/x/net@v0.55.0
-CVE-2026-78663 until=2026-11-11 # golang.org/x/net@v0.55.0
-CVE-2026-78669 until=2026-11-11 # golang.org/x/net@v0.55.0
-CVE-2026-97032 until=2026-11-11 # golang.org/x/net@v0.55.0
-CVE-2026-78659 until=2026-11-11 # golang.org/x/net@v0.55.0
-CVE-2026-78660 until=2026-11-11 # golang.org/x/net@v0.55.0
 CVE-2026-78661 until=2026-12-04 # golang.org/x/net@v0.61.0 since=2026-11-04
 CVE-2026-97045 until=2026-12-04 # golang.org/x/net@v0.61.0 since=2026-11-04
+CVE-2026-128100 until=2026-12-18 # github.com/hashicorp/vault/api@v1.23.0 since=2026-11-18
